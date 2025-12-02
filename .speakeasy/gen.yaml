@@ -26,8 +26,9 @@ generation:
     generateTests: false
     generateNewTests: true
     skipResponseBodyAssertions: false
+  sdkName: Zavu Go SDK
 go:
-  version: 0.0.7
+  version: 0.0.10
   additionalDependencies: {}
   baseErrorName: SDKError
   clientServerStatusCodesAsErrors: true
@@ -50,6 +51,7 @@ go:
   multipartArrayFormat: standard
   nullableOptionalWrapper: true
   outputModelSuffix: output
+  published: true
   respectRequiredFields: false
   responseFormat: envelope-http
   sdkPackageName: zavu
