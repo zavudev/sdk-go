@@ -50,7 +50,7 @@ Design goals:
 
 To add the SDK as a dependency to your project:
 ```bash
-go get github.com/zavu-dev/zavu-go
+go get github.com/zavudev/sdk-go
 ```
 <!-- End SDK Installation [installation] -->
 
@@ -64,8 +64,8 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -108,8 +108,8 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -176,9 +176,9 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
-	"github.com/zavu-dev/zavu-go/retry"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
+	"github.com/zavudev/sdk-go/retry"
 	"log"
 	"models/operations"
 )
@@ -220,9 +220,9 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
-	"github.com/zavu-dev/zavu-go/retry"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
+	"github.com/zavudev/sdk-go/retry"
 	"log"
 )
 
@@ -282,9 +282,9 @@ package main
 import (
 	"context"
 	"errors"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/apierrors"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/apierrors"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -335,8 +335,8 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -381,7 +381,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zavu-dev/zavu-go"
+	"github.com/zavudev/sdk-go"
 )
 
 var (

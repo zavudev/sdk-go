@@ -58,8 +58,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -116,8 +116,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/operations"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/operations"
 	"log"
 )
 
@@ -169,7 +169,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -221,8 +221,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -278,7 +278,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -329,8 +329,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -390,7 +390,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -442,7 +442,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -494,7 +494,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -545,8 +545,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -601,7 +601,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -653,8 +653,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -707,7 +707,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -759,7 +759,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -813,7 +813,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -865,8 +865,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 
@@ -919,7 +919,7 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
+	zavu "github.com/zavudev/sdk-go"
 	"log"
 )
 
@@ -971,8 +971,8 @@ package main
 
 import(
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 

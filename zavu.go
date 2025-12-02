@@ -8,13 +8,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/zavu-dev/zavu-go/internal/config"
-	"github.com/zavu-dev/zavu-go/internal/hooks"
-	"github.com/zavu-dev/zavu-go/internal/utils"
-	"github.com/zavu-dev/zavu-go/models/apierrors"
-	"github.com/zavu-dev/zavu-go/models/components"
-	"github.com/zavu-dev/zavu-go/models/operations"
-	"github.com/zavu-dev/zavu-go/retry"
+	"github.com/zavudev/sdk-go/internal/config"
+	"github.com/zavudev/sdk-go/internal/hooks"
+	"github.com/zavudev/sdk-go/internal/utils"
+	"github.com/zavudev/sdk-go/models/apierrors"
+	"github.com/zavudev/sdk-go/models/components"
+	"github.com/zavudev/sdk-go/models/operations"
+	"github.com/zavudev/sdk-go/retry"
 	"net/http"
 	"net/url"
 	"time"
@@ -141,9 +141,9 @@ func WithTimeout(timeout time.Duration) SDKOption {
 // New creates a new instance of the SDK with the provided options
 func New(opts ...SDKOption) *Zavu {
 	sdk := &Zavu{
-		SDKVersion: "0.0.6",
+		SDKVersion: "0.0.7",
 		sdkConfiguration: config.SDKConfiguration{
-			UserAgent:  "speakeasy-sdk/go 0.0.6 2.768.1 0.2.0 github.com/zavu-dev/zavu-go",
+			UserAgent:  "speakeasy-sdk/go 0.0.7 2.768.1 0.2.0 github.com/zavudev/sdk-go",
 			ServerList: ServerList,
 		},
 		hooks: hooks.New(),

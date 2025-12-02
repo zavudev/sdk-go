@@ -12,8 +12,8 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/zavu-dev/zavu-go/optionalnullable"
-	"github.com/zavu-dev/zavu-go/types"
+	"github.com/zavudev/sdk-go/optionalnullable"
+	"github.com/zavudev/sdk-go/types"
 )
 
 func PopulateQueryParams(_ context.Context, req *http.Request, queryParams interface{}, globals interface{}, allowEmptyValue map[string]struct{}) error {

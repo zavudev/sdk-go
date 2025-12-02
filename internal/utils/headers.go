@@ -9,7 +9,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/zavu-dev/zavu-go/optionalnullable"
+	"github.com/zavudev/sdk-go/optionalnullable"
 )
 
 func PopulateHeaders(_ context.Context, req *http.Request, headers interface{}, globals interface{}) {

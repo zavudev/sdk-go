@@ -10,8 +10,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zavu-dev/zavu-go/optionalnullable"
-	"github.com/zavu-dev/zavu-go/types"
+	"github.com/zavudev/sdk-go/optionalnullable"
+	"github.com/zavudev/sdk-go/types"
 )
 
 func populateForm(paramName string, explode bool, objType reflect.Type, objValue reflect.Value, delimiter string, defaultValue *string, allowEmptyValue map[string]struct{}, getFieldName func(reflect.StructField) string) url.Values {

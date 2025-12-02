@@ -5,7 +5,7 @@ package components
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/zavu-dev/zavu-go/internal/utils"
+	"github.com/zavudev/sdk-go/internal/utils"
 	"time"
 )
 

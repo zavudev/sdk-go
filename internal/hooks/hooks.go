@@ -5,7 +5,7 @@ package hooks
 import (
 	"context"
 	"errors"
-	"github.com/zavu-dev/zavu-go/internal/config"
+	"github.com/zavudev/sdk-go/internal/config"
 	"net/http"
 )
 

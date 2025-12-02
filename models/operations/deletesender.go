@@ -3,7 +3,7 @@
 package operations
 
 import (
-	"github.com/zavu-dev/zavu-go/models/components"
+	"github.com/zavudev/sdk-go/models/components"
 )
 
 type DeleteSenderRequest struct {

@@ -14,7 +14,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/zavu-dev/zavu-go/types"
+	"github.com/zavudev/sdk-go/types"
 )
 
 func MarshalJSON(v interface{}, tag reflect.StructTag, topLevel bool) ([]byte, error) {

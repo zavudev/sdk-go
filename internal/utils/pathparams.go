@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zavu-dev/zavu-go/optionalnullable"
-	"github.com/zavu-dev/zavu-go/types"
+	"github.com/zavudev/sdk-go/optionalnullable"
+	"github.com/zavudev/sdk-go/types"
 )
 
 func GenerateURL(_ context.Context, serverURL, path string, pathParams interface{}, globals interface{}) (string, error) {

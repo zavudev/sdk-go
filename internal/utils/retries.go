@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/zavu-dev/zavu-go/retry"
+	"github.com/zavudev/sdk-go/retry"
 	"io"
 	"math"
 	"math/rand"

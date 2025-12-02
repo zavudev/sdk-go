@@ -3,7 +3,7 @@
 package components
 
 import (
-	"github.com/zavu-dev/zavu-go/internal/utils"
+	"github.com/zavudev/sdk-go/internal/utils"
 )
 
 type ContactUpdateRequest struct {

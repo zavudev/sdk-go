@@ -4,7 +4,7 @@ package apierrors
 
 import (
 	"encoding/json"
-	"github.com/zavu-dev/zavu-go/models/components"
+	"github.com/zavudev/sdk-go/models/components"
 )
 
 type Error struct {

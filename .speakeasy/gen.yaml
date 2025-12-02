@@ -27,7 +27,7 @@ generation:
     generateNewTests: true
     skipResponseBodyAssertions: false
 go:
-  version: 0.0.6
+  version: 0.0.7
   additionalDependencies: {}
   baseErrorName: SDKError
   clientServerStatusCodesAsErrors: true
@@ -46,7 +46,7 @@ go:
   inputModelSuffix: input
   maxMethodParams: 4
   methodArguments: require-security-and-request
-  modulePath: github.com/zavu-dev/zavu-go
+  modulePath: github.com/zavudev/sdk-go
   multipartArrayFormat: standard
   nullableOptionalWrapper: true
   outputModelSuffix: output

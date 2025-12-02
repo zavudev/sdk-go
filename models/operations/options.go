@@ -4,8 +4,8 @@ package operations
 
 import (
 	"errors"
-	"github.com/zavu-dev/zavu-go/internal/utils"
-	"github.com/zavu-dev/zavu-go/retry"
+	"github.com/zavudev/sdk-go/internal/utils"
+	"github.com/zavudev/sdk-go/retry"
 	"time"
 )
 

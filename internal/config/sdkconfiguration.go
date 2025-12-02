@@ -4,7 +4,7 @@ package config
 
 import (
 	"context"
-	"github.com/zavu-dev/zavu-go/retry"
+	"github.com/zavudev/sdk-go/retry"
 	"net/http"
 	"time"
 )

@@ -1,5 +1,5 @@
 
-module github.com/zavu-dev/zavu-go
+module github.com/zavudev/sdk-go
 
 go 1.22
 

@@ -4,8 +4,8 @@ package main
 
 import (
 	"context"
-	zavu "github.com/zavu-dev/zavu-go"
-	"github.com/zavu-dev/zavu-go/models/components"
+	zavu "github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/models/components"
 	"log"
 )
 

@@ -3,8 +3,8 @@
 package components
 
 import (
-	"github.com/zavu-dev/zavu-go/internal/utils"
-	"github.com/zavu-dev/zavu-go/optionalnullable"
+	"github.com/zavudev/sdk-go/internal/utils"
+	"github.com/zavudev/sdk-go/optionalnullable"
 	"time"
 )
 

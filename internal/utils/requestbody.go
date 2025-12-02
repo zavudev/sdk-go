@@ -15,7 +15,7 @@ import (
 	"reflect"
 	"regexp"
 
-	"github.com/zavu-dev/zavu-go/optionalnullable"
+	"github.com/zavudev/sdk-go/optionalnullable"
 )
 
 const (

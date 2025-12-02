@@ -3,8 +3,8 @@
 package operations
 
 import (
-	"github.com/zavu-dev/zavu-go/internal/utils"
-	"github.com/zavu-dev/zavu-go/models/components"
+	"github.com/zavudev/sdk-go/internal/utils"
+	"github.com/zavudev/sdk-go/models/components"
 )
 
 type GetMessageRequest struct {
