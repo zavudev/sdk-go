@@ -1,0 +1,15 @@
+# Contact
+
+
+## Fields
+
+| Field                                                  | Type                                                   | Required                                               | Description                                            | Example                                                |
+| ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------ |
+| `ID`                                                   | *string*                                               | :heavy_check_mark:                                     | N/A                                                    |                                                        |
+| `PhoneNumber`                                          | *string*                                               | :heavy_check_mark:                                     | E.164 phone number.                                    | +56912345678                                           |
+| `CountryCode`                                          | **string*                                              | :heavy_minus_sign:                                     | N/A                                                    | CL                                                     |
+| `WhatsappWindowOpen`                                   | **bool*                                                | :heavy_minus_sign:                                     | Whether the 24-hour WhatsApp window is currently open. |                                                        |
+| `LastWhatsappMessageAt`                                | [*time.Time](https://pkg.go.dev/time#Time)             | :heavy_minus_sign:                                     | When the contact last messaged via WhatsApp.           |                                                        |
+| `Metadata`                                             | map[string]*string*                                    | :heavy_minus_sign:                                     | N/A                                                    |                                                        |
+| `CreatedAt`                                            | [*time.Time](https://pkg.go.dev/time#Time)             | :heavy_minus_sign:                                     | N/A                                                    |                                                        |
+| `UpdatedAt`                                            | [*time.Time](https://pkg.go.dev/time#Time)             | :heavy_minus_sign:                                     | N/A                                                    |                                                        |
