@@ -1,7 +1,4 @@
-# .gitignore
-.DS_Store
-**/.speakeasy/temp/
-**/.speakeasy/logs/
-.speakeasy/reports
-.env
-.env.local
+.prism.log
+codegen.log
+Brewfile.lock.json
+.idea/
