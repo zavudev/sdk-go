@@ -8,8 +8,8 @@ import (
 	"os"
 	"slices"
 
-	"github.com/stainless-sdks/zavudev-go/internal/requestconfig"
-	"github.com/stainless-sdks/zavudev-go/option"
+	"github.com/zavudev/sdk-go/internal/requestconfig"
+	"github.com/zavudev/sdk-go/option"
 )
 
 // Client creates a struct with services and top level methods that help with

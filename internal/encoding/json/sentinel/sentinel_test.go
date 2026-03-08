@@ -1,8 +1,8 @@
 package sentinel_test
 
 import (
-	"github.com/stainless-sdks/zavudev-go/internal/encoding/json/sentinel"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
+	"github.com/zavudev/sdk-go/internal/encoding/json/sentinel"
+	"github.com/zavudev/sdk-go/packages/param"
 	"reflect"
 	"slices"
 	"testing"

@@ -3,8 +3,8 @@ package apijson_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stainless-sdks/zavudev-go/internal/apijson"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
+	"github.com/zavudev/sdk-go/internal/apijson"
+	"github.com/zavudev/sdk-go/packages/param"
 	"reflect"
 	"testing"
 )

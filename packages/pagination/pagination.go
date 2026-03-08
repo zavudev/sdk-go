@@ -5,11 +5,11 @@ package pagination
 import (
 	"net/http"
 
-	"github.com/stainless-sdks/zavudev-go/internal/apijson"
-	"github.com/stainless-sdks/zavudev-go/internal/requestconfig"
-	"github.com/stainless-sdks/zavudev-go/option"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
-	"github.com/stainless-sdks/zavudev-go/packages/respjson"
+	"github.com/zavudev/sdk-go/internal/apijson"
+	"github.com/zavudev/sdk-go/internal/requestconfig"
+	"github.com/zavudev/sdk-go/option"
+	"github.com/zavudev/sdk-go/packages/param"
+	"github.com/zavudev/sdk-go/packages/respjson"
 )
 
 // aliased to make [param.APIUnion] private when embedding

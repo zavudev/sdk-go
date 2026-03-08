@@ -2,7 +2,7 @@
 
 <!-- x-release-please-start-version -->
 
-<a href="https://pkg.go.dev/github.com/stainless-sdks/zavudev-go"><img src="https://pkg.go.dev/badge/github.com/stainless-sdks/zavudev-go.svg" alt="Go Reference"></a>
+<a href="https://pkg.go.dev/github.com/zavudev/sdk-go"><img src="https://pkg.go.dev/badge/github.com/zavudev/sdk-go.svg" alt="Go Reference"></a>
 
 <!-- x-release-please-end -->
 
@@ -22,17 +22,25 @@ Use the Zavudev MCP Server to enable AI assistants to interact with this API, al
 
 ## Installation
 
+<!-- x-release-please-start-version -->
+
 ```go
 import (
-	"github.com/stainless-sdks/zavudev-go" // imported as zavudev
+	"github.com/zavudev/sdk-go" // imported as zavudev
 )
 ```
 
+<!-- x-release-please-end -->
+
 Or to pin the version:
 
+<!-- x-release-please-start-version -->
+
 ```sh
-go get -u 'github.com/stainless-sdks/zavudev-go@v0.0.1'
+go get -u 'github.com/zavudev/sdk-go@v0.0.1'
 ```
+
+<!-- x-release-please-end -->
 
 ## Requirements
 
@@ -49,8 +57,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/stainless-sdks/zavudev-go"
-	"github.com/stainless-sdks/zavudev-go/option"
+	"github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/option"
 )
 
 func main() {
@@ -280,7 +288,7 @@ client.Messages.Send(context.TODO(), ...,
 
 The request option `option.WithDebugLog(nil)` may be helpful while debugging.
 
-See the [full list of request options](https://pkg.go.dev/github.com/stainless-sdks/zavudev-go/option).
+See the [full list of request options](https://pkg.go.dev/github.com/zavudev/sdk-go/option).
 
 ### Pagination
 
@@ -523,7 +531,7 @@ This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) con
 
 We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/zavudev-go/issues) with questions, bugs, or suggestions.
+We are keen for your feedback; please open an [issue](https://www.github.com/zavudev/sdk-go/issues) with questions, bugs, or suggestions.
 
 ## Contributing
 

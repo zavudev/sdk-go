@@ -2,7 +2,7 @@ package param_test
 
 import (
 	"encoding/json"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
+	"github.com/zavudev/sdk-go/packages/param"
 	"testing"
 )
 

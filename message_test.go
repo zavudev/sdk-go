@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stainless-sdks/zavudev-go"
-	"github.com/stainless-sdks/zavudev-go/internal/testutil"
-	"github.com/stainless-sdks/zavudev-go/option"
+	"github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/internal/testutil"
+	"github.com/zavudev/sdk-go/option"
 )
 
 func TestMessageGet(t *testing.T) {
