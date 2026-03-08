@@ -1,405 +1,530 @@
-# Zavu Go SDK
+# Zavudev Go API Library
 
-Developer-friendly & type-safe Go SDK for the Zavu multi-channel messaging API.
+<!-- x-release-please-start-version -->
 
-[![License: MIT](https://img.shields.io/badge/LICENSE_//_MIT-3b5bdb?style=for-the-badge&labelColor=eff6ff)](https://opensource.org/licenses/MIT)
+<a href="https://pkg.go.dev/github.com/stainless-sdks/zavudev-go"><img src="https://pkg.go.dev/badge/github.com/stainless-sdks/zavudev-go.svg" alt="Go Reference"></a>
 
-<!-- Start Summary [summary] -->
-## Summary
+<!-- x-release-please-end -->
 
-Zavu Messaging API: Unified multi-channel messaging API for Zavu.
+The Zavudev Go library provides convenient access to the [Zavudev REST API](https://docs.zavu.dev)
+from applications written in Go.
 
-Supported channels:
-- **SMS**: Simple text messages
-- **WhatsApp**: Rich messaging with media, buttons, lists, and templates
+It is generated with [Stainless](https://www.stainless.com/).
 
-Design goals:
-- Simple `send()` entrypoint for developers
-- Project-level authentication via Bearer token
-- Support for all WhatsApp message types (text, image, video, audio, document, sticker, location, contact, buttons, list, reaction, template)
-- If a non-text message type is sent, WhatsApp channel is used automatically
-- 24-hour WhatsApp conversation window enforcement
-<!-- End Summary [summary] -->
+## MCP Server
 
-<!-- Start Table of Contents [toc] -->
-## Table of Contents
-<!-- $toc-max-depth=2 -->
-* [Zavu Go SDK](#zavu-go-sdk)
-  * [SDK Installation](#sdk-installation)
-  * [SDK Example Usage](#sdk-example-usage)
-  * [Authentication](#authentication)
-  * [Available Resources and Operations](#available-resources-and-operations)
-  * [Retries](#retries)
-  * [Error Handling](#error-handling)
-  * [Server Selection](#server-selection)
-  * [Custom HTTP Client](#custom-http-client)
-* [Development](#development)
-  * [Maturity](#maturity)
-  * [Contributions](#contributions)
+Use the Zavudev MCP Server to enable AI assistants to interact with this API, allowing them to explore endpoints, make test requests, and use documentation to help integrate this SDK into your application.
 
-<!-- End Table of Contents [toc] -->
+[![Add to Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en-US/install-mcp?name=%40zavudev%2Fsdk-mcp&config=eyJuYW1lIjoiQHphdnVkZXYvc2RrLW1jcCIsInRyYW5zcG9ydCI6Imh0dHAiLCJ1cmwiOiJodHRwczovL3phdnVkZXYuc3RsbWNwLmNvbSIsImhlYWRlcnMiOnsieC16YXZ1ZGV2LWFwaS1rZXkiOiJNeSBBUEkgS2V5In19)
+[![Install in VS Code](https://img.shields.io/badge/_-Add_to_VS_Code-blue?style=for-the-badge&logo=data:image/svg%2bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIGZpbGw9Im5vbmUiIHZpZXdCb3g9IjAgMCA0MCA0MCI+PHBhdGggZmlsbD0iI0VFRSIgZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNMzAuMjM1IDM5Ljg4NGEyLjQ5MSAyLjQ5MSAwIDAgMS0xLjc4MS0uNzNMMTIuNyAyNC43OGwtMy40NiAyLjYyNC0zLjQwNiAyLjU4MmExLjY2NSAxLjY2NSAwIDAgMS0xLjA4Mi4zMzggMS42NjQgMS42NjQgMCAwIDEtMS4wNDYtLjQzMWwtMi4yLTJhMS42NjYgMS42NjYgMCAwIDEgMC0yLjQ2M0w3LjQ1OCAyMCA0LjY3IDE3LjQ1MyAxLjUwNyAxNC41N2ExLjY2NSAxLjY2NSAwIDAgMSAwLTIuNDYzbDIuMi0yYTEuNjY1IDEuNjY1IDAgMCAxIDIuMTMtLjA5N2w2Ljg2MyA1LjIwOUwyOC40NTIuODQ0YTIuNDg4IDIuNDg4IDAgMCAxIDEuODQxLS43MjljLjM1MS4wMDkuNjk5LjA5MSAxLjAxOS4yNDVsOC4yMzYgMy45NjFhMi41IDIuNSAwIDAgMSAxLjQxNSAyLjI1M3YuMDk5LS4wNDVWMzMuMzd2LS4wNDUuMDk1YTIuNTAxIDIuNTAxIDAgMCAxLTEuNDE2IDIuMjU3bC04LjIzNSAzLjk2MWEyLjQ5MiAyLjQ5MiAwIDAgMS0xLjA3Ny4yNDZabS43MTYtMjguOTQ3LTExLjk0OCA5LjA2MiAxMS45NTIgOS4wNjUtLjAwNC0xOC4xMjdaIi8+PC9zdmc+)](https://vscode.stainless.com/mcp/%7B%22name%22%3A%22%40zavudev%2Fsdk-mcp%22%2C%22type%22%3A%22http%22%2C%22url%22%3A%22https%3A%2F%2Fzavudev.stlmcp.com%22%2C%22headers%22%3A%7B%22x-zavudev-api-key%22%3A%22My%20API%20Key%22%7D%7D)
 
-<!-- Start SDK Installation [installation] -->
-## SDK Installation
+> Note: You may need to set environment variables in your MCP client.
 
-To add the SDK as a dependency to your project:
-```bash
-go get github.com/zavudev/sdk-go
+## Installation
+
+```go
+import (
+	"github.com/stainless-sdks/zavudev-go" // imported as zavudev
+)
 ```
-<!-- End SDK Installation [installation] -->
 
-<!-- Start SDK Example Usage [usage] -->
-## SDK Example Usage
+Or to pin the version:
 
-### Example
+```sh
+go get -u 'github.com/stainless-sdks/zavudev-go@v0.0.1'
+```
+
+## Requirements
+
+This library requires Go 1.22+.
+
+## Usage
+
+The full API of this library can be found in [api.md](api.md).
 
 ```go
 package main
 
 import (
 	"context"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/components"
-	"log"
+	"fmt"
+
+	"github.com/stainless-sdks/zavudev-go"
+	"github.com/stainless-sdks/zavudev-go/option"
 )
 
 func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
+	client := zavudev.NewClient(
+		option.WithAPIKey("My API Key"), // defaults to os.LookupEnv("ZAVUDEV_API_KEY")
 	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"))
+	messageResponse, err := client.Messages.Send(context.TODO(), zavudev.MessageSendParams{
+		To:   "+14155551234",
+		Text: zavudev.String("Hello from Zavu!"),
+	})
 	if err != nil {
-		log.Fatal(err)
+		panic(err.Error())
 	}
-	if res.MessageResponse != nil {
-		// handle response
-	}
+	fmt.Printf("%+v\n", messageResponse.Message)
 }
 
 ```
-<!-- End SDK Example Usage [usage] -->
 
-<!-- Start Authentication [security] -->
-## Authentication
+### Request fields
 
-### Per-Client Security Schemes
+The zavudev library uses the [`omitzero`](https://tip.golang.org/doc/go1.24#encodingjsonpkgencodingjson)
+semantics from the Go 1.24+ `encoding/json` release for request fields.
 
-This SDK supports the following security scheme globally:
+Required primitive fields (`int64`, `string`, etc.) feature the tag <code>\`json:"...,required"\`</code>. These
+fields are always serialized, even their zero values.
 
-| Name         | Type | Scheme      |
-| ------------ | ---- | ----------- |
-| `BearerAuth` | http | HTTP Bearer |
+Optional primitive types are wrapped in a `param.Opt[T]`. These fields can be set with the provided constructors, `zavudev.String(string)`, `zavudev.Int(int64)`, etc.
 
-You can configure it using the `WithSecurity` option when initializing the SDK client instance. For example:
+Any `param.Opt[T]`, map, slice, struct or string enum uses the
+tag <code>\`json:"...,omitzero"\`</code>. Its zero value is considered omitted.
+
+The `param.IsOmitted(any)` function can confirm the presence of any `omitzero` field.
+
 ```go
-package main
+p := zavudev.ExampleParams{
+	ID:   "id_xxx",              // required property
+	Name: zavudev.String("..."), // optional property
 
-import (
-	"context"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/components"
-	"log"
+	Point: zavudev.Point{
+		X: 0,              // required field will serialize as 0
+		Y: zavudev.Int(1), // optional field will serialize as 1
+		// ... omitted non-required fields will not be serialized
+	},
+
+	Origin: zavudev.Origin{}, // the zero value of [Origin] is considered omitted
+}
+```
+
+To send `null` instead of a `param.Opt[T]`, use `param.Null[T]()`.
+To send `null` instead of a struct `T`, use `param.NullStruct[T]()`.
+
+```go
+p.Name = param.Null[string]()       // 'null' instead of string
+p.Point = param.NullStruct[Point]() // 'null' instead of struct
+
+param.IsNull(p.Name)  // true
+param.IsNull(p.Point) // true
+```
+
+Request structs contain a `.SetExtraFields(map[string]any)` method which can send non-conforming
+fields in the request body. Extra fields overwrite any struct fields with a matching
+key. For security reasons, only use `SetExtraFields` with trusted data.
+
+To send a custom value instead of a struct, use `param.Override[T](value)`.
+
+```go
+// In cases where the API specifies a given type,
+// but you want to send something else, use [SetExtraFields]:
+p.SetExtraFields(map[string]any{
+	"x": 0.01, // send "x" as a float instead of int
+})
+
+// Send a number instead of an object
+custom := param.Override[zavudev.FooParams](12)
+```
+
+### Request unions
+
+Unions are represented as a struct with fields prefixed by "Of" for each of its variants,
+only one field can be non-zero. The non-zero field will be serialized.
+
+Sub-properties of the union can be accessed via methods on the union struct.
+These methods return a mutable pointer to the underlying data, if present.
+
+```go
+// Only one field can be non-zero, use param.IsOmitted() to check if a field is set
+type AnimalUnionParam struct {
+	OfCat *Cat `json:",omitzero,inline`
+	OfDog *Dog `json:",omitzero,inline`
+}
+
+animal := AnimalUnionParam{
+	OfCat: &Cat{
+		Name: "Whiskers",
+		Owner: PersonParam{
+			Address: AddressParam{Street: "3333 Coyote Hill Rd", Zip: 0},
+		},
+	},
+}
+
+// Mutating a field
+if address := animal.GetOwner().GetAddress(); address != nil {
+	address.ZipCode = 94304
+}
+```
+
+### Response objects
+
+All fields in response structs are ordinary value types (not pointers or wrappers).
+Response structs also include a special `JSON` field containing metadata about
+each property.
+
+```go
+type Animal struct {
+	Name   string `json:"name,nullable"`
+	Owners int    `json:"owners"`
+	Age    int    `json:"age"`
+	JSON   struct {
+		Name        respjson.Field
+		Owner       respjson.Field
+		Age         respjson.Field
+		ExtraFields map[string]respjson.Field
+	} `json:"-"`
+}
+```
+
+To handle optional data, use the `.Valid()` method on the JSON field.
+`.Valid()` returns true if a field is not `null`, not present, or couldn't be marshaled.
+
+If `.Valid()` is false, the corresponding field will simply be its zero value.
+
+```go
+raw := `{"owners": 1, "name": null}`
+
+var res Animal
+json.Unmarshal([]byte(raw), &res)
+
+// Accessing regular fields
+
+res.Owners // 1
+res.Name   // ""
+res.Age    // 0
+
+// Optional field checks
+
+res.JSON.Owners.Valid() // true
+res.JSON.Name.Valid()   // false
+res.JSON.Age.Valid()    // false
+
+// Raw JSON values
+
+res.JSON.Owners.Raw()                  // "1"
+res.JSON.Name.Raw() == "null"          // true
+res.JSON.Name.Raw() == respjson.Null   // true
+res.JSON.Age.Raw() == ""               // true
+res.JSON.Age.Raw() == respjson.Omitted // true
+```
+
+These `.JSON` structs also include an `ExtraFields` map containing
+any properties in the json response that were not specified
+in the struct. This can be useful for API features not yet
+present in the SDK.
+
+```go
+body := res.JSON.ExtraFields["my_unexpected_field"].Raw()
+```
+
+### Response Unions
+
+In responses, unions are represented by a flattened struct containing all possible fields from each of the
+object variants.
+To convert it to a variant use the `.AsFooVariant()` method or the `.AsAny()` method if present.
+
+If a response value union contains primitive values, primitive fields will be alongside
+the properties but prefixed with `Of` and feature the tag `json:"...,inline"`.
+
+```go
+type AnimalUnion struct {
+	// From variants [Dog], [Cat]
+	Owner Person `json:"owner"`
+	// From variant [Dog]
+	DogBreed string `json:"dog_breed"`
+	// From variant [Cat]
+	CatBreed string `json:"cat_breed"`
+	// ...
+
+	JSON struct {
+		Owner respjson.Field
+		// ...
+	} `json:"-"`
+}
+
+// If animal variant
+if animal.Owner.Address.ZipCode == "" {
+	panic("missing zip code")
+}
+
+// Switch on the variant
+switch variant := animal.AsAny().(type) {
+case Dog:
+case Cat:
+default:
+	panic("unexpected type")
+}
+```
+
+### RequestOptions
+
+This library uses the functional options pattern. Functions defined in the
+`option` package return a `RequestOption`, which is a closure that mutates a
+`RequestConfig`. These options can be supplied to the client or at individual
+requests. For example:
+
+```go
+client := zavudev.NewClient(
+	// Adds a header to every request made by the client
+	option.WithHeader("X-Some-Header", "custom_header_info"),
 )
 
-func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
-	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if res.MessageResponse != nil {
-		// handle response
-	}
-}
-
+client.Messages.Send(context.TODO(), ...,
+	// Override the header
+	option.WithHeader("X-Some-Header", "some_other_custom_header_info"),
+	// Add an undocumented field to the request body, using sjson syntax
+	option.WithJSONSet("some.json.path", map[string]string{"my": "object"}),
+)
 ```
-<!-- End Authentication [security] -->
 
-<!-- Start Available Resources and Operations [operations] -->
-## Available Resources and Operations
+The request option `option.WithDebugLog(nil)` may be helpful while debugging.
 
-<details open>
-<summary>Available methods</summary>
+See the [full list of request options](https://pkg.go.dev/github.com/stainless-sdks/zavudev-go/option).
 
-### [Zavu SDK](docs/sdks/zavu/README.md)
+### Pagination
 
-* [SendMessage](docs/sdks/zavu/README.md#sendmessage) - Send a message
-* [ListMessages](docs/sdks/zavu/README.md#listmessages) - List messages
-* [GetMessage](docs/sdks/zavu/README.md#getmessage) - Get message by ID
-* [SendReaction](docs/sdks/zavu/README.md#sendreaction) - Send reaction to message
-* [ListTemplates](docs/sdks/zavu/README.md#listtemplates) - List templates
-* [CreateTemplate](docs/sdks/zavu/README.md#createtemplate) - Create template
-* [GetTemplate](docs/sdks/zavu/README.md#gettemplate) - Get template
-* [DeleteTemplate](docs/sdks/zavu/README.md#deletetemplate) - Delete template
-* [ListSenders](docs/sdks/zavu/README.md#listsenders) - List senders
-* [CreateSender](docs/sdks/zavu/README.md#createsender) - Create sender
-* [GetSender](docs/sdks/zavu/README.md#getsender) - Get sender
-* [UpdateSender](docs/sdks/zavu/README.md#updatesender) - Update sender
-* [DeleteSender](docs/sdks/zavu/README.md#deletesender) - Delete sender
-* [ListContacts](docs/sdks/zavu/README.md#listcontacts) - List contacts
-* [GetContact](docs/sdks/zavu/README.md#getcontact) - Get contact
-* [UpdateContact](docs/sdks/zavu/README.md#updatecontact) - Update contact
-* [GetContactByPhone](docs/sdks/zavu/README.md#getcontactbyphone) - Get contact by phone number
-* [IntrospectPhone](docs/sdks/zavu/README.md#introspectphone) - Introspect phone number
+This library provides some conveniences for working with paginated list endpoints.
 
-</details>
-<!-- End Available Resources and Operations [operations] -->
+You can use `.ListAutoPaging()` methods to iterate through items across all pages:
 
-<!-- Start Retries [retries] -->
-## Retries
-
-Some of the endpoints in this SDK support retries. If you use the SDK without any configuration, it will fall back to the default retry strategy provided by the API. However, the default retry strategy can be overridden on a per-operation basis, or across the entire SDK.
-
-To change the default retry strategy for a single API call, simply provide a `retry.Config` object to the call by using the `WithRetries` option:
 ```go
-package main
+iter := client.Messages.ListAutoPaging(context.TODO(), zavudev.MessageListParams{})
+// Automatically fetches more pages as needed.
+for iter.Next() {
+	message := iter.Current()
+	fmt.Printf("%+v\n", message)
+}
+if err := iter.Err(); err != nil {
+	panic(err.Error())
+}
+```
 
-import (
-	"context"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/components"
-	"github.com/zavudev/sdk-go/retry"
-	"log"
-	"models/operations"
+Or you can use simple `.List()` methods to fetch a single page and receive a standard response object
+with additional helper methods like `.GetNextPage()`, e.g.:
+
+```go
+page, err := client.Messages.List(context.TODO(), zavudev.MessageListParams{})
+for page != nil {
+	for _, message := range page.Items {
+		fmt.Printf("%+v\n", message)
+	}
+	page, err = page.GetNextPage()
+}
+if err != nil {
+	panic(err.Error())
+}
+```
+
+### Errors
+
+When the API returns a non-success status code, we return an error with type
+`*zavudev.Error`. This contains the `StatusCode`, `*http.Request`, and
+`*http.Response` values of the request, as well as the JSON of the error body
+(much like other response objects in the SDK).
+
+To handle errors, we recommend that you use the `errors.As` pattern:
+
+```go
+_, err := client.Messages.Send(context.TODO(), zavudev.MessageSendParams{
+	To:   "+14155551234",
+	Text: zavudev.String("Hello from Zavu!"),
+})
+if err != nil {
+	var apierr *zavudev.Error
+	if errors.As(err, &apierr) {
+		println(string(apierr.DumpRequest(true)))  // Prints the serialized HTTP request
+		println(string(apierr.DumpResponse(true))) // Prints the serialized HTTP response
+	}
+	panic(err.Error()) // GET "/v1/messages": 400 Bad Request { ... }
+}
+```
+
+When other errors occur, they are returned unwrapped; for example,
+if HTTP transport fails, you might receive `*url.Error` wrapping `*net.OpError`.
+
+### Timeouts
+
+Requests do not time out by default; use context to configure a timeout for a request lifecycle.
+
+Note that if a request is [retried](#retries), the context timeout does not start over.
+To set a per-retry timeout, use `option.WithRequestTimeout()`.
+
+```go
+// This sets the timeout for the request, including all the retries.
+ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+defer cancel()
+client.Messages.Send(
+	ctx,
+	zavudev.MessageSendParams{
+		To:   "+14155551234",
+		Text: zavudev.String("Hello from Zavu!"),
+	},
+	// This sets the per-retry timeout
+	option.WithRequestTimeout(20*time.Second),
+)
+```
+
+### File uploads
+
+Request parameters that correspond to file uploads in multipart requests are typed as
+`io.Reader`. The contents of the `io.Reader` will by default be sent as a multipart form
+part with the file name of "anonymous_file" and content-type of "application/octet-stream".
+
+The file name and content-type can be customized by implementing `Name() string` or `ContentType()
+string` on the run-time type of `io.Reader`. Note that `os.File` implements `Name() string`, so a
+file returned by `os.Open` will be sent with the file name on disk.
+
+We also provide a helper `zavudev.File(reader io.Reader, filename string, contentType string)`
+which can be used to wrap any `io.Reader` with the appropriate file name and content type.
+
+### Retries
+
+Certain errors will be automatically retried 2 times by default, with a short exponential backoff.
+We retry by default all connection errors, 408 Request Timeout, 409 Conflict, 429 Rate Limit,
+and >=500 Internal errors.
+
+You can use the `WithMaxRetries` option to configure or disable this:
+
+```go
+// Configure the default for all requests:
+client := zavudev.NewClient(
+	option.WithMaxRetries(0), // default is 2
 )
 
-func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
-	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"), operations.WithRetries(
-		retry.Config{
-			Strategy: "backoff",
-			Backoff: &retry.BackoffStrategy{
-				InitialInterval: 1,
-				MaxInterval:     50,
-				Exponent:        1.1,
-				MaxElapsedTime:  100,
-			},
-			RetryConnectionErrors: false,
-		}))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if res.MessageResponse != nil {
-		// handle response
-	}
-}
-
-```
-
-If you'd like to override the default retry strategy for all operations that support retries, you can use the `WithRetryConfig` option at SDK initialization:
-```go
-package main
-
-import (
-	"context"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/components"
-	"github.com/zavudev/sdk-go/retry"
-	"log"
+// Override per-request:
+client.Messages.Send(
+	context.TODO(),
+	zavudev.MessageSendParams{
+		To:   "+14155551234",
+		Text: zavudev.String("Hello from Zavu!"),
+	},
+	option.WithMaxRetries(5),
 )
-
-func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithRetryConfig(
-			retry.Config{
-				Strategy: "backoff",
-				Backoff: &retry.BackoffStrategy{
-					InitialInterval: 1,
-					MaxInterval:     50,
-					Exponent:        1.1,
-					MaxElapsedTime:  100,
-				},
-				RetryConnectionErrors: false,
-			}),
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
-	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if res.MessageResponse != nil {
-		// handle response
-	}
-}
-
 ```
-<!-- End Retries [retries] -->
 
-<!-- Start Error Handling [errors] -->
-## Error Handling
+### Accessing raw response data (e.g. response headers)
 
-Handling errors in this SDK should largely match your expectations. All operations return a response object or an error, they will never return both.
-
-By Default, an API error will return `apierrors.APIError`. When custom error responses are specified for an operation, the SDK may also return their associated error. You can refer to respective *Errors* tables in SDK docs for more details on possible error types for each operation.
-
-For example, the `SendMessage` function may return the following errors:
-
-| Error Type         | Status Code             | Content Type     |
-| ------------------ | ----------------------- | ---------------- |
-| apierrors.Error    | 400, 401, 404, 409, 429 | application/json |
-| apierrors.Error    | 500                     | application/json |
-| apierrors.APIError | 4XX, 5XX                | \*/\*            |
-
-### Example
+You can access the raw HTTP response data by using the `option.WithResponseInto()` request option. This is useful when
+you need to examine response headers, status codes, or other details.
 
 ```go
-package main
-
-import (
-	"context"
-	"errors"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/apierrors"
-	"github.com/zavudev/sdk-go/models/components"
-	"log"
+// Create a variable to store the HTTP response
+var response *http.Response
+messageResponse, err := client.Messages.Send(
+	context.TODO(),
+	zavudev.MessageSendParams{
+		To:   "+14155551234",
+		Text: zavudev.String("Hello from Zavu!"),
+	},
+	option.WithResponseInto(&response),
 )
-
-func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
-	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"))
-	if err != nil {
-
-		var e *apierrors.Error
-		if errors.As(err, &e) {
-			// handle error
-			log.Fatal(e.Error())
-		}
-
-		var e *apierrors.Error
-		if errors.As(err, &e) {
-			// handle error
-			log.Fatal(e.Error())
-		}
-
-		var e *apierrors.APIError
-		if errors.As(err, &e) {
-			// handle error
-			log.Fatal(e.Error())
-		}
-	}
+if err != nil {
+	// handle error
 }
+fmt.Printf("%+v\n", messageResponse)
 
-```
-<!-- End Error Handling [errors] -->
-
-<!-- Start Server Selection [server] -->
-## Server Selection
-
-### Override Server URL Per-Client
-
-The default server can be overridden globally using the `WithServerURL(serverURL string)` option when initializing the SDK client instance. For example:
-```go
-package main
-
-import (
-	"context"
-	zavu "github.com/zavudev/sdk-go"
-	"github.com/zavudev/sdk-go/models/components"
-	"log"
-)
-
-func main() {
-	ctx := context.Background()
-
-	s := zavu.New(
-		zavu.WithServerURL("https://api.zavu.dev"),
-		zavu.WithSecurity("<YOUR_BEARER_TOKEN_HERE>"),
-	)
-
-	res, err := s.SendMessage(ctx, components.MessageRequest{
-		To:   "+56912345678",
-		Text: zavu.Pointer("Your verification code is 123456"),
-	}, zavu.Pointer("sender_12345"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	if res.MessageResponse != nil {
-		// handle response
-	}
-}
-
-```
-<!-- End Server Selection [server] -->
-
-<!-- Start Custom HTTP Client [http-client] -->
-## Custom HTTP Client
-
-The Go SDK makes API calls that wrap an internal HTTP client. The requirements for the HTTP client are very simple. It must match this interface:
-
-```go
-type HTTPClient interface {
-	Do(req *http.Request) (*http.Response, error)
-}
+fmt.Printf("Status Code: %d\n", response.StatusCode)
+fmt.Printf("Headers: %+#v\n", response.Header)
 ```
 
-The built-in `net/http` client satisfies this interface and a default client based on the built-in is provided by default. To replace this default with a client of your own, you can implement this interface yourself or provide your own client configured as desired. Here's a simple example, which adds a client with a 30 second timeout.
+### Making custom/undocumented requests
+
+This library is typed for convenient access to the documented API. If you need to access undocumented
+endpoints, params, or response properties, the library can still be used.
+
+#### Undocumented endpoints
+
+To make requests to undocumented endpoints, you can use `client.Get`, `client.Post`, and other HTTP verbs.
+`RequestOptions` on the client, such as retries, will be respected when making these requests.
 
 ```go
-import (
-	"net/http"
-	"time"
-
-	"github.com/zavudev/sdk-go"
-)
-
 var (
-	httpClient = &http.Client{Timeout: 30 * time.Second}
-	sdkClient  = zavu.New(zavu.WithClient(httpClient))
+    // params can be an io.Reader, a []byte, an encoding/json serializable object,
+    // or a "…Params" struct defined in this library.
+    params map[string]any
+
+    // result can be an []byte, *http.Response, a encoding/json deserializable object,
+    // or a model defined in this library.
+    result *http.Response
+)
+err := client.Post(context.Background(), "/unspecified", params, &result)
+if err != nil {
+    …
+}
+```
+
+#### Undocumented request params
+
+To make requests using undocumented parameters, you may use either the `option.WithQuerySet()`
+or the `option.WithJSONSet()` methods.
+
+```go
+params := FooNewParams{
+    ID:   "id_xxxx",
+    Data: FooNewParamsData{
+        FirstName: zavudev.String("John"),
+    },
+}
+client.Foo.New(context.Background(), params, option.WithJSONSet("data.last_name", "Doe"))
+```
+
+#### Undocumented response properties
+
+To access undocumented response properties, you may either access the raw JSON of the response as a string
+with `result.JSON.RawJSON()`, or get the raw JSON of a particular field on the result with
+`result.JSON.Foo.Raw()`.
+
+Any fields that are not present on the response struct will be saved and can be accessed by `result.JSON.ExtraFields()` which returns the extra fields as a `map[string]Field`.
+
+### Middleware
+
+We provide `option.WithMiddleware` which applies the given
+middleware to requests.
+
+```go
+func Logger(req *http.Request, next option.MiddlewareNext) (res *http.Response, err error) {
+	// Before the request
+	start := time.Now()
+	LogReq(req)
+
+	// Forward the request to the next handler
+	res, err = next(req)
+
+	// Handle stuff after the request
+	end := time.Now()
+	LogRes(res, err, start - end)
+
+    return res, err
+}
+
+client := zavudev.NewClient(
+	option.WithMiddleware(Logger),
 )
 ```
 
-This can be a convenient way to configure timeouts, cookies, proxies, custom headers, and other low-level configuration.
-<!-- End Custom HTTP Client [http-client] -->
+When multiple middlewares are provided as variadic arguments, the middlewares
+are applied left to right. If `option.WithMiddleware` is given
+multiple times, for example first in the client then the method, the
+middleware in the client will run first and the middleware given in the method
+will run next.
 
-<!-- Placeholder for Future Speakeasy SDK Sections -->
+You may also replace the default `http.Client` with
+`option.WithHTTPClient(client)`. Only one http client is
+accepted (this overwrites any previous client) and receives requests after any
+middleware has been applied.
 
-# Development
+## Semantic versioning
 
-## Maturity
+This package generally follows [SemVer](https://semver.org/spec/v2.0.0.html) conventions, though certain backwards-incompatible changes may be released as minor versions:
 
-This SDK is in beta, and there may be breaking changes between versions without a major version update. Therefore, we recommend pinning usage
-to a specific package version. This way, you can install the same version each time without breaking changes unless you are intentionally
-looking for the latest version.
+1. Changes to library internals which are technically public but not intended or documented for external use. _(Please open a GitHub issue to let us know if you are relying on such internals.)_
+2. Changes that we do not expect to impact the vast majority of users in practice.
 
-## Contributions
+We take backwards-compatibility seriously and work hard to ensure you can rely on a smooth upgrade experience.
 
-While we value open-source contributions to this SDK, this library is generated programmatically. Any manual changes added to internal files will be overwritten on the next generation. 
-We look forward to hearing your feedback. Feel free to open a PR or an issue with a proof of concept and we'll do our best to include it in a future release. 
+We are keen for your feedback; please open an [issue](https://www.github.com/stainless-sdks/zavudev-go/issues) with questions, bugs, or suggestions.
 
-### SDK Created by [Speakeasy](https://www.speakeasy.com/?utm_source=undefined&utm_campaign=go)
+## Contributing
+
+See [the contributing documentation](./CONTRIBUTING.md).
