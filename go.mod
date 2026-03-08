@@ -1,4 +1,4 @@
-module github.com/stainless-sdks/zavudev-go
+module github.com/zavudev/sdk-go
 
 go 1.22
 

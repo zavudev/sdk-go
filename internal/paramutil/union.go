@@ -2,7 +2,7 @@ package paramutil
 
 import (
 	"fmt"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
+	"github.com/zavudev/sdk-go/packages/param"
 	"reflect"
 )
 

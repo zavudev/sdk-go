@@ -3,8 +3,8 @@
 package zavudev
 
 import (
-	"github.com/stainless-sdks/zavudev-go/internal/apierror"
-	"github.com/stainless-sdks/zavudev-go/packages/param"
+	"github.com/zavudev/sdk-go/internal/apierror"
+	"github.com/zavudev/sdk-go/packages/param"
 )
 
 // aliased to make [param.APIUnion] private when embedding

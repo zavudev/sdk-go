@@ -11,15 +11,15 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stainless-sdks/zavudev-go/internal/requestconfig"
 	"github.com/tidwall/sjson"
+	"github.com/zavudev/sdk-go/internal/requestconfig"
 )
 
 // RequestOption is an option for the requests made by the zavudev API Client
 // which can be supplied to clients, services, and methods. You can read more about this functional
 // options pattern in our [README].
 //
-// [README]: https://pkg.go.dev/github.com/stainless-sdks/zavudev-go#readme-requestoptions
+// [README]: https://pkg.go.dev/github.com/zavudev/sdk-go#readme-requestoptions
 type RequestOption = requestconfig.RequestOption
 
 // WithBaseURL returns a RequestOption that sets the BaseURL for the client.

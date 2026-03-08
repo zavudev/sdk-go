@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stainless-sdks/zavudev-go"
-	"github.com/stainless-sdks/zavudev-go/internal"
-	"github.com/stainless-sdks/zavudev-go/option"
+	"github.com/zavudev/sdk-go"
+	"github.com/zavudev/sdk-go/internal"
+	"github.com/zavudev/sdk-go/option"
 )
 
 type closureTransport struct {

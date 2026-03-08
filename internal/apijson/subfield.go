@@ -1,7 +1,7 @@
 package apijson
 
 import (
-	"github.com/stainless-sdks/zavudev-go/packages/respjson"
+	"github.com/zavudev/sdk-go/packages/respjson"
 	"reflect"
 )
 
