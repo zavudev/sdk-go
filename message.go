@@ -104,10 +104,10 @@ func (r *MessageService) React(ctx context.Context, messageID string, params Mes
 // - Window opens when the user messages you first
 // - Use template messages to initiate conversations outside the window
 //
-// **Email requirements:**
+// **Daily limits:**
 //
-//   - Email channel requires KYC verification. Complete identity verification in the
-//     dashboard before sending emails.
+// - Unverified accounts: 200 messages per channel per day
+// - Complete KYC verification to increase limits to 10,000/day
 func (r *MessageService) Send(ctx context.Context, params MessageSendParams, opts ...option.RequestOption) (res *MessageResponse, err error) {
 	if !param.IsOmitted(params.ZavuSender) {
 		opts = append(opts, option.WithHeader("Zavu-Sender", fmt.Sprintf("%v", params.ZavuSender.Value)))
