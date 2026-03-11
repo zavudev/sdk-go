@@ -50,11 +50,11 @@ func (r *SenderAgentService) New(ctx context.Context, senderID string, body Send
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get the AI agent configuration for a sender.
@@ -62,11 +62,11 @@ func (r *SenderAgentService) Get(ctx context.Context, senderID string, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update an AI agent's configuration.
@@ -74,11 +74,11 @@ func (r *SenderAgentService) Update(ctx context.Context, senderID string, body S
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Delete an AI agent.
@@ -87,11 +87,11 @@ func (r *SenderAgentService) Delete(ctx context.Context, senderID string, opts .
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get statistics for an AI agent including invocations, tokens, and costs.
@@ -99,11 +99,11 @@ func (r *SenderAgentService) Stats(ctx context.Context, senderID string, opts ..
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/stats", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // AI Agent configuration for a sender.

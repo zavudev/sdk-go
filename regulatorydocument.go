@@ -45,7 +45,7 @@ func (r *RegulatoryDocumentService) New(ctx context.Context, body RegulatoryDocu
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/documents"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get a specific regulatory document.
@@ -53,11 +53,11 @@ func (r *RegulatoryDocumentService) Get(ctx context.Context, documentID string, 
 	opts = slices.Concat(r.Options, opts)
 	if documentID == "" {
 		err = errors.New("missing required documentId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/documents/%s", url.PathEscape(documentID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List regulatory documents for this project.
@@ -89,11 +89,11 @@ func (r *RegulatoryDocumentService) Delete(ctx context.Context, documentID strin
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if documentID == "" {
 		err = errors.New("missing required documentId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/documents/%s", url.PathEscape(documentID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get a presigned URL to upload a document file. After uploading, use the
@@ -102,7 +102,7 @@ func (r *RegulatoryDocumentService) UploadURL(ctx context.Context, opts ...optio
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/documents/upload-url"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // A regulatory document for phone number requirements.

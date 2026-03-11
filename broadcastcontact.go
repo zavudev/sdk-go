@@ -45,7 +45,7 @@ func (r *BroadcastContactService) List(ctx context.Context, broadcastID string, 
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/contacts", url.PathEscape(broadcastID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
@@ -70,11 +70,11 @@ func (r *BroadcastContactService) Add(ctx context.Context, broadcastID string, b
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/contacts", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Remove a contact from a broadcast in draft status.
@@ -83,15 +83,15 @@ func (r *BroadcastContactService) Remove(ctx context.Context, contactID string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.BroadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return err
 	}
 	if contactID == "" {
 		err = errors.New("missing required contactId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/contacts/%s", url.PathEscape(body.BroadcastID), url.PathEscape(contactID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 type BroadcastContactAddResponse struct {

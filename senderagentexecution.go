@@ -43,7 +43,7 @@ func (r *SenderAgentExecutionService) List(ctx context.Context, senderID string,
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/executions", url.PathEscape(senderID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
