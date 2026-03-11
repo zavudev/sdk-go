@@ -44,11 +44,11 @@ func (r *ContactService) Get(ctx context.Context, contactID string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if contactID == "" {
 		err = errors.New("missing required contactId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(contactID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update contact
@@ -56,11 +56,11 @@ func (r *ContactService) Update(ctx context.Context, contactID string, body Cont
 	opts = slices.Concat(r.Options, opts)
 	if contactID == "" {
 		err = errors.New("missing required contactId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(contactID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List contacts with their communication channels.
@@ -91,11 +91,11 @@ func (r *ContactService) GetByPhone(ctx context.Context, phoneNumber string, opt
 	opts = slices.Concat(r.Options, opts)
 	if phoneNumber == "" {
 		err = errors.New("missing required phoneNumber parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/contacts/phone/%s", url.PathEscape(phoneNumber))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type Contact struct {

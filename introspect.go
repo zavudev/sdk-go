@@ -38,7 +38,7 @@ func (r *IntrospectService) ValidatePhone(ctx context.Context, body IntrospectVa
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/introspect/phone"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Type of phone line.

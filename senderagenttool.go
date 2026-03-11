@@ -44,11 +44,11 @@ func (r *SenderAgentToolService) New(ctx context.Context, senderID string, body 
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get a specific tool.
@@ -56,15 +56,15 @@ func (r *SenderAgentToolService) Get(ctx context.Context, toolID string, query S
 	opts = slices.Concat(r.Options, opts)
 	if query.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if toolID == "" {
 		err = errors.New("missing required toolId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s", url.PathEscape(query.SenderID), url.PathEscape(toolID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a tool.
@@ -72,15 +72,15 @@ func (r *SenderAgentToolService) Update(ctx context.Context, toolID string, para
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if toolID == "" {
 		err = errors.New("missing required toolId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s", url.PathEscape(params.SenderID), url.PathEscape(toolID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // List tools for an agent.
@@ -90,7 +90,7 @@ func (r *SenderAgentToolService) List(ctx context.Context, senderID string, quer
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools", url.PathEscape(senderID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
@@ -116,15 +116,15 @@ func (r *SenderAgentToolService) Delete(ctx context.Context, toolID string, body
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	if toolID == "" {
 		err = errors.New("missing required toolId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s", url.PathEscape(body.SenderID), url.PathEscape(toolID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Test a tool by triggering its webhook with test parameters.
@@ -132,15 +132,15 @@ func (r *SenderAgentToolService) Test(ctx context.Context, toolID string, params
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if toolID == "" {
 		err = errors.New("missing required toolId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s/test", url.PathEscape(params.SenderID), url.PathEscape(toolID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 type AgentTool struct {

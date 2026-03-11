@@ -46,7 +46,7 @@ func (r *SenderService) New(ctx context.Context, body SenderNewParams, opts ...o
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/senders"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get sender
@@ -54,11 +54,11 @@ func (r *SenderService) Get(ctx context.Context, senderID string, opts ...option
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update sender
@@ -66,11 +66,11 @@ func (r *SenderService) Update(ctx context.Context, senderID string, body Sender
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List senders
@@ -102,11 +102,11 @@ func (r *SenderService) Delete(ctx context.Context, senderID string, opts ...opt
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get the WhatsApp Business profile for a sender. The sender must have a WhatsApp
@@ -115,11 +115,11 @@ func (r *SenderService) GetProfile(ctx context.Context, senderID string, opts ..
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/profile", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Regenerate the webhook secret for a sender. The old secret will be invalidated
@@ -128,11 +128,11 @@ func (r *SenderService) RegenerateWebhookSecret(ctx context.Context, senderID st
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/webhook/secret", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update the WhatsApp Business profile for a sender. The sender must have a
@@ -141,11 +141,11 @@ func (r *SenderService) UpdateProfile(ctx context.Context, senderID string, body
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/profile", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Upload a new profile picture for the WhatsApp Business profile. The image will
@@ -154,11 +154,11 @@ func (r *SenderService) UploadProfilePicture(ctx context.Context, senderID strin
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/profile/picture", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 type Sender struct {

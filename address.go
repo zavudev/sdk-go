@@ -45,7 +45,7 @@ func (r *AddressService) New(ctx context.Context, body AddressNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/addresses"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get a specific regulatory address.
@@ -53,11 +53,11 @@ func (r *AddressService) Get(ctx context.Context, addressID string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if addressID == "" {
 		err = errors.New("missing required addressId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/addresses/%s", url.PathEscape(addressID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List regulatory addresses for this project.
@@ -89,11 +89,11 @@ func (r *AddressService) Delete(ctx context.Context, addressID string, opts ...o
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if addressID == "" {
 		err = errors.New("missing required addressId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/addresses/%s", url.PathEscape(addressID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // A regulatory address for phone number requirements.

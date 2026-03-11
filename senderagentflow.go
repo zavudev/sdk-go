@@ -44,11 +44,11 @@ func (r *SenderAgentFlowService) New(ctx context.Context, senderID string, body 
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get a specific flow.
@@ -56,15 +56,15 @@ func (r *SenderAgentFlowService) Get(ctx context.Context, flowID string, query S
 	opts = slices.Concat(r.Options, opts)
 	if query.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if flowID == "" {
 		err = errors.New("missing required flowId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows/%s", url.PathEscape(query.SenderID), url.PathEscape(flowID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a flow.
@@ -72,15 +72,15 @@ func (r *SenderAgentFlowService) Update(ctx context.Context, flowID string, para
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if flowID == "" {
 		err = errors.New("missing required flowId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows/%s", url.PathEscape(params.SenderID), url.PathEscape(flowID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // List flows for an agent.
@@ -90,7 +90,7 @@ func (r *SenderAgentFlowService) List(ctx context.Context, senderID string, quer
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows", url.PathEscape(senderID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
@@ -116,15 +116,15 @@ func (r *SenderAgentFlowService) Delete(ctx context.Context, flowID string, body
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	if flowID == "" {
 		err = errors.New("missing required flowId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows/%s", url.PathEscape(body.SenderID), url.PathEscape(flowID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Create a copy of an existing flow with a new name.
@@ -132,15 +132,15 @@ func (r *SenderAgentFlowService) Duplicate(ctx context.Context, flowID string, p
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if flowID == "" {
 		err = errors.New("missing required flowId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/flows/%s/duplicate", url.PathEscape(params.SenderID), url.PathEscape(flowID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 type AgentFlow struct {

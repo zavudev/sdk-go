@@ -44,15 +44,15 @@ func (r *SenderAgentKnowledgeBaseDocumentService) New(ctx context.Context, kbID 
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if kbID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s/documents", url.PathEscape(params.SenderID), url.PathEscape(kbID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // List documents in a knowledge base.
@@ -62,11 +62,11 @@ func (r *SenderAgentKnowledgeBaseDocumentService) List(ctx context.Context, kbID
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if kbID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s/documents", url.PathEscape(params.SenderID), url.PathEscape(kbID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, params, &res, opts...)
@@ -92,19 +92,19 @@ func (r *SenderAgentKnowledgeBaseDocumentService) Delete(ctx context.Context, do
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	if body.KBID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return err
 	}
 	if docID == "" {
 		err = errors.New("missing required docId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s/documents/%s", url.PathEscape(body.SenderID), url.PathEscape(body.KBID), url.PathEscape(docID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 type SenderAgentKnowledgeBaseDocumentNewResponse struct {
