@@ -45,7 +45,7 @@ func (r *TemplateService) New(ctx context.Context, body TemplateNewParams, opts 
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/templates"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get template
@@ -53,11 +53,11 @@ func (r *TemplateService) Get(ctx context.Context, templateID string, opts ...op
 	opts = slices.Concat(r.Options, opts)
 	if templateID == "" {
 		err = errors.New("missing required templateId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/templates/%s", url.PathEscape(templateID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List WhatsApp message templates for this project.
@@ -89,11 +89,11 @@ func (r *TemplateService) Delete(ctx context.Context, templateID string, opts ..
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if templateID == "" {
 		err = errors.New("missing required templateId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/templates/%s", url.PathEscape(templateID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Submit a WhatsApp template to Meta for approval. The template must be in draft
@@ -103,11 +103,11 @@ func (r *TemplateService) Submit(ctx context.Context, templateID string, body Te
 	opts = slices.Concat(r.Options, opts)
 	if templateID == "" {
 		err = errors.New("missing required templateId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/templates/%s/submit", url.PathEscape(templateID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 type Template struct {

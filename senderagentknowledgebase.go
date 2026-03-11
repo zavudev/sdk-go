@@ -46,11 +46,11 @@ func (r *SenderAgentKnowledgeBaseService) New(ctx context.Context, senderID stri
 	opts = slices.Concat(r.Options, opts)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases", url.PathEscape(senderID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get a specific knowledge base.
@@ -58,15 +58,15 @@ func (r *SenderAgentKnowledgeBaseService) Get(ctx context.Context, kbID string, 
 	opts = slices.Concat(r.Options, opts)
 	if query.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if kbID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s", url.PathEscape(query.SenderID), url.PathEscape(kbID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a knowledge base.
@@ -74,15 +74,15 @@ func (r *SenderAgentKnowledgeBaseService) Update(ctx context.Context, kbID strin
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	if kbID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s", url.PathEscape(params.SenderID), url.PathEscape(kbID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // List knowledge bases for an agent.
@@ -92,7 +92,7 @@ func (r *SenderAgentKnowledgeBaseService) List(ctx context.Context, senderID str
 	opts = append([]option.RequestOption{option.WithResponseInto(&raw)}, opts...)
 	if senderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases", url.PathEscape(senderID))
 	cfg, err := requestconfig.NewRequestConfig(ctx, http.MethodGet, path, query, &res, opts...)
@@ -118,15 +118,15 @@ func (r *SenderAgentKnowledgeBaseService) Delete(ctx context.Context, kbID strin
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if body.SenderID == "" {
 		err = errors.New("missing required senderId parameter")
-		return
+		return err
 	}
 	if kbID == "" {
 		err = errors.New("missing required kbId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s", url.PathEscape(body.SenderID), url.PathEscape(kbID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 type AgentDocument struct {

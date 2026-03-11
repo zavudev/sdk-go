@@ -44,11 +44,11 @@ func (r *PhoneNumberService) Get(ctx context.Context, phoneNumberID string, opts
 	opts = slices.Concat(r.Options, opts)
 	if phoneNumberID == "" {
 		err = errors.New("missing required phoneNumberId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/phone-numbers/%s", url.PathEscape(phoneNumberID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a phone number's name or sender assignment.
@@ -56,11 +56,11 @@ func (r *PhoneNumberService) Update(ctx context.Context, phoneNumberID string, b
 	opts = slices.Concat(r.Options, opts)
 	if phoneNumberID == "" {
 		err = errors.New("missing required phoneNumberId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/phone-numbers/%s", url.PathEscape(phoneNumberID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List all phone numbers owned by this project.
@@ -92,7 +92,7 @@ func (r *PhoneNumberService) Purchase(ctx context.Context, body PhoneNumberPurch
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/phone-numbers"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Release a phone number. The phone number must not be assigned to a sender.
@@ -101,11 +101,11 @@ func (r *PhoneNumberService) Release(ctx context.Context, phoneNumberID string, 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if phoneNumberID == "" {
 		err = errors.New("missing required phoneNumberId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/phone-numbers/%s", url.PathEscape(phoneNumberID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Get regulatory requirements for purchasing phone numbers in a specific country.
@@ -115,7 +115,7 @@ func (r *PhoneNumberService) Requirements(ctx context.Context, query PhoneNumber
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/phone-numbers/requirements"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 // Search for available phone numbers to purchase by country and type.
@@ -123,7 +123,7 @@ func (r *PhoneNumberService) SearchAvailable(ctx context.Context, query PhoneNum
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/phone-numbers/available"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 type AvailablePhoneNumber struct {

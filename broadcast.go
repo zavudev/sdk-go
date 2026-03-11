@@ -47,7 +47,7 @@ func (r *BroadcastService) New(ctx context.Context, body BroadcastNewParams, opt
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/broadcasts"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Get broadcast
@@ -55,11 +55,11 @@ func (r *BroadcastService) Get(ctx context.Context, broadcastID string, opts ...
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update a broadcast in draft status.
@@ -67,11 +67,11 @@ func (r *BroadcastService) Update(ctx context.Context, broadcastID string, body 
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // List broadcasts for this project.
@@ -103,11 +103,11 @@ func (r *BroadcastService) Delete(ctx context.Context, broadcastID string, opts 
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return
+	return err
 }
 
 // Cancel a broadcast. Pending contacts will be skipped, but already queued
@@ -116,11 +116,11 @@ func (r *BroadcastService) Cancel(ctx context.Context, broadcastID string, opts 
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/cancel", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Get real-time progress of a broadcast including delivery counts and estimated
@@ -129,11 +129,11 @@ func (r *BroadcastService) Progress(ctx context.Context, broadcastID string, opt
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/progress", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // Update the scheduled time for a broadcast. The broadcast must be in scheduled
@@ -142,11 +142,11 @@ func (r *BroadcastService) Reschedule(ctx context.Context, broadcastID string, b
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/schedule", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 // Start sending the broadcast immediately or schedule for later. Broadcasts go
@@ -157,11 +157,11 @@ func (r *BroadcastService) Send(ctx context.Context, broadcastID string, body Br
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
 		err = errors.New("missing required broadcastId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/broadcasts/%s/send", url.PathEscape(broadcastID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 type Broadcast struct {

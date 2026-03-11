@@ -45,11 +45,11 @@ func (r *MessageService) Get(ctx context.Context, messageID string, opts ...opti
 	opts = slices.Concat(r.Options, opts)
 	if messageID == "" {
 		err = errors.New("missing required messageId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/messages/%s", url.PathEscape(messageID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 // List messages previously sent by this project.
@@ -84,11 +84,11 @@ func (r *MessageService) React(ctx context.Context, messageID string, params Mes
 	opts = slices.Concat(r.Options, opts)
 	if messageID == "" {
 		err = errors.New("missing required messageId parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/messages/%s/reactions", url.PathEscape(messageID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Send a message to a recipient via SMS or WhatsApp.
@@ -104,10 +104,10 @@ func (r *MessageService) React(ctx context.Context, messageID string, params Mes
 // - Window opens when the user messages you first
 // - Use template messages to initiate conversations outside the window
 //
-// **Email requirements:**
+// **Daily limits:**
 //
-//   - Email channel requires KYC verification. Complete identity verification in the
-//     dashboard before sending emails.
+// - Unverified accounts: 200 messages per channel per day
+// - Complete KYC verification to increase limits to 10,000/day
 func (r *MessageService) Send(ctx context.Context, params MessageSendParams, opts ...option.RequestOption) (res *MessageResponse, err error) {
 	if !param.IsOmitted(params.ZavuSender) {
 		opts = append(opts, option.WithHeader("Zavu-Sender", fmt.Sprintf("%v", params.ZavuSender.Value)))
@@ -115,7 +115,7 @@ func (r *MessageService) Send(ctx context.Context, params MessageSendParams, opt
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/messages"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
-	return
+	return res, err
 }
 
 // Delivery channel. Use 'auto' for intelligent routing.
