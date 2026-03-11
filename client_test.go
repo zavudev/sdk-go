@@ -38,7 +38,7 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		}),
 	)
-	client.Messages.Send(context.Background(), zavudev.MessageSendParams{
+	_, _ = client.Messages.Send(context.Background(), zavudev.MessageSendParams{
 		To:   "+14155551234",
 		Text: zavudev.String("Hello from Zavu!"),
 	})
