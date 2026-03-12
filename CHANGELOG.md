@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.0 (2026-03-12)
+
+Full Changelog: [v0.2.0...v0.3.0](https://github.com/zavudev/sdk-go/compare/v0.2.0...v0.3.0)
+
+### Features
+
+* **api:** api update ([36144a4](https://github.com/zavudev/sdk-go/commit/36144a4fde7d0e452b6ee242b6db771b3a32a089))
+
 ## 0.2.0 (2026-03-11)
 
 Full Changelog: [v0.1.0...v0.2.0](https://github.com/zavudev/sdk-go/compare/v0.1.0...v0.2.0)
