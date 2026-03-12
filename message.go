@@ -536,7 +536,8 @@ func (r *MessageReactParams) UnmarshalJSON(data []byte) error {
 }
 
 type MessageSendParams struct {
-	// Recipient phone number in E.164 format or email address.
+	// Recipient phone number in E.164 format, email address, or numeric chat ID (for
+	// Telegram/Instagram).
 	To string `json:"to" api:"required"`
 	// Whether to enable automatic fallback to SMS if WhatsApp fails. Defaults to true.
 	FallbackEnabled param.Opt[bool] `json:"fallbackEnabled,omitzero"`
