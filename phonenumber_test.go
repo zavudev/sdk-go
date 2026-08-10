@@ -182,10 +182,11 @@ func TestPhoneNumberSearchAvailableWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.PhoneNumbers.SearchAvailable(context.TODO(), zavudev.PhoneNumberSearchAvailableParams{
-		CountryCode: "xx",
-		Contains:    zavudev.String("contains"),
-		Limit:       zavudev.Int(50),
-		Type:        zavudev.PhoneNumberTypeLocal,
+		CountryCode:  "xx",
+		Capabilities: zavudev.String("voice,sms"),
+		Contains:     zavudev.String("contains"),
+		Limit:        zavudev.Int(50),
+		Type:         zavudev.PhoneNumberTypeLocal,
 	})
 	if err != nil {
 		var apierr *zavudev.Error

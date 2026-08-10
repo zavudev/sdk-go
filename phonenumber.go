@@ -86,8 +86,12 @@ func (r *PhoneNumberService) ListAutoPaging(ctx context.Context, query PhoneNumb
 	return pagination.NewCursorAutoPager(r.List(ctx, query, opts...))
 }
 
-// Purchase an available phone number. The first US phone number is free for each
-// team.
+// Purchase an available phone number. Requires a paid plan: the Free plan cannot
+// purchase phone numbers and receives `402` with code `paid_plan_required`. Paid
+// plans include one US number at no charge. The included number is one per account
+// and is granted once: claiming it spends the benefit for good, so releasing that
+// number does not make another one free, and numbers the account already bought do
+// not consume it.
 func (r *PhoneNumberService) Purchase(ctx context.Context, body PhoneNumberPurchaseParams, opts ...option.RequestOption) (res *PhoneNumberPurchaseResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/phone-numbers"
@@ -236,7 +240,9 @@ func (r *PhoneNumberCapabilities) UnmarshalJSON(data []byte) error {
 }
 
 type PhoneNumberPricing struct {
-	// Whether this number qualifies for the free first US number offer.
+	// Whether this number qualifies as the plan-included US number on paid plans. The
+	// benefit is one per account: it is never offered again once claimed, not even
+	// after the number is released.
 	IsFreeEligible bool `json:"isFreeEligible"`
 	// Monthly price in USD.
 	MonthlyPrice float64 `json:"monthlyPrice"`
@@ -270,7 +276,7 @@ type PhoneNumberType string
 
 const (
 	PhoneNumberTypeLocal    PhoneNumberType = "local"
-	PhoneNumberTypeMobile   PhoneNumberType = "mobile"
+	PhoneNumberTypeNational PhoneNumberType = "national"
 	PhoneNumberTypeTollFree PhoneNumberType = "tollFree"
 )
 
@@ -499,7 +505,7 @@ type PhoneNumberRequirementsParams struct {
 	CountryCode string `query:"countryCode" api:"required" json:"-"`
 	// Type of phone number (local, mobile, tollFree).
 	//
-	// Any of "local", "mobile", "tollFree".
+	// Any of "local", "national", "tollFree".
 	Type PhoneNumberType `query:"type,omitzero" json:"-"`
 	paramObj
 }
@@ -516,13 +522,16 @@ func (r PhoneNumberRequirementsParams) URLQuery() (v url.Values, err error) {
 type PhoneNumberSearchAvailableParams struct {
 	// Two-letter ISO country code.
 	CountryCode string `query:"countryCode" api:"required" json:"-"`
+	// Comma-separated capabilities the number must have: `sms`, `voice`, `mms`.
+	// Numbers missing any of them are dropped.
+	Capabilities param.Opt[string] `query:"capabilities,omitzero" json:"-"`
 	// Search for numbers containing this string.
 	Contains param.Opt[string] `query:"contains,omitzero" json:"-"`
 	// Maximum number of results to return.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Type of phone number to search for.
 	//
-	// Any of "local", "mobile", "tollFree".
+	// Any of "local", "national", "tollFree".
 	Type PhoneNumberType `query:"type,omitzero" json:"-"`
 	paramObj
 }

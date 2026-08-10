@@ -27,7 +27,8 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewContactService] method instead.
 type ContactService struct {
-	Options []option.RequestOption
+	Options  []option.RequestOption
+	Channels ContactChannelService
 }
 
 // NewContactService generates a new service that applies the given options to each
@@ -36,7 +37,16 @@ type ContactService struct {
 func NewContactService(opts ...option.RequestOption) (r ContactService) {
 	r = ContactService{}
 	r.Options = opts
+	r.Channels = NewContactChannelService(opts...)
 	return
+}
+
+// Create a new contact with one or more communication channels.
+func (r *ContactService) New(ctx context.Context, body ContactNewParams, opts ...option.RequestOption) (res *Contact, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/contacts"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
 }
 
 // Get contact
@@ -86,6 +96,51 @@ func (r *ContactService) ListAutoPaging(ctx context.Context, query ContactListPa
 	return pagination.NewCursorAutoPager(r.List(ctx, query, opts...))
 }
 
+// Permanently delete a contact and its communication channels. Implements
+// right-to-erasure obligations under GDPR Art. 17, Ley 19.628 (Chile) Art. 12,
+// CCPA § 1798.105, and LGPD Art. 18.VI. The contact, its channels, and any
+// associated agent flow sessions and conversation threads are removed. Past
+// message records and broadcast delivery logs are retained for billing/audit but
+// no longer reference the deleted contact.
+func (r *ContactService) Delete(ctx context.Context, contactID string, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if contactID == "" {
+		err = errors.New("missing required contactId parameter")
+		return err
+	}
+	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(contactID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return err
+}
+
+// Dismiss the merge suggestion for a contact.
+func (r *ContactService) DismissMergeSuggestion(ctx context.Context, contactID string, opts ...option.RequestOption) (err error) {
+	opts = slices.Concat(r.Options, opts)
+	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
+	if contactID == "" {
+		err = errors.New("missing required contactId parameter")
+		return err
+	}
+	path := fmt.Sprintf("v1/contacts/%s/merge-suggestion", url.PathEscape(contactID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
+	return err
+}
+
+// Merge a source contact into this contact. All channels from the source contact
+// will be moved to the target contact, and the source contact will be marked as
+// merged.
+func (r *ContactService) Merge(ctx context.Context, contactID string, body ContactMergeParams, opts ...option.RequestOption) (res *Contact, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if contactID == "" {
+		err = errors.New("missing required contactId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/contacts/%s/merge", url.PathEscape(contactID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Get contact by phone number
 func (r *ContactService) GetByPhone(ctx context.Context, phoneNumber string, opts ...option.RequestOption) (res *Contact, err error) {
 	opts = slices.Concat(r.Options, opts)
@@ -111,7 +166,8 @@ type Contact struct {
 	CountryCode string           `json:"countryCode"`
 	// Preferred channel for this contact.
 	//
-	// Any of "sms", "whatsapp", "telegram", "email", "instagram", "voice".
+	// Any of "sms", "whatsapp", "telegram", "email", "instagram", "messenger",
+	// "voice".
 	DefaultChannel ContactDefaultChannel `json:"defaultChannel"`
 	// Display name for the contact.
 	DisplayName string `json:"displayName"`
@@ -154,14 +210,28 @@ func (r *Contact) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Preferred channel for this contact.
+type ContactDefaultChannel string
+
+const (
+	ContactDefaultChannelSMS       ContactDefaultChannel = "sms"
+	ContactDefaultChannelWhatsapp  ContactDefaultChannel = "whatsapp"
+	ContactDefaultChannelTelegram  ContactDefaultChannel = "telegram"
+	ContactDefaultChannelEmail     ContactDefaultChannel = "email"
+	ContactDefaultChannelInstagram ContactDefaultChannel = "instagram"
+	ContactDefaultChannelMessenger ContactDefaultChannel = "messenger"
+	ContactDefaultChannelVoice     ContactDefaultChannel = "voice"
+)
+
 // A communication channel for a contact.
 type ContactChannel struct {
 	ID string `json:"id" api:"required"`
 	// Channel type.
 	//
-	// Any of "sms", "whatsapp", "email", "telegram", "voice".
-	Channel   string    `json:"channel" api:"required"`
-	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
+	// Any of "sms", "whatsapp", "email", "telegram", "instagram", "messenger",
+	// "voice".
+	Channel   ContactChannelChannel `json:"channel" api:"required"`
+	CreatedAt time.Time             `json:"createdAt" api:"required" format:"date-time"`
 	// Channel identifier (phone number or email address).
 	Identifier string `json:"identifier" api:"required"`
 	// Whether this is the primary channel for its type.
@@ -203,6 +273,19 @@ func (r *ContactChannel) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Channel type.
+type ContactChannelChannel string
+
+const (
+	ContactChannelChannelSMS       ContactChannelChannel = "sms"
+	ContactChannelChannelWhatsapp  ContactChannelChannel = "whatsapp"
+	ContactChannelChannelEmail     ContactChannelChannel = "email"
+	ContactChannelChannelTelegram  ContactChannelChannel = "telegram"
+	ContactChannelChannelInstagram ContactChannelChannel = "instagram"
+	ContactChannelChannelMessenger ContactChannelChannel = "messenger"
+	ContactChannelChannelVoice     ContactChannelChannel = "voice"
+)
+
 // Delivery metrics for this channel.
 type ContactChannelMetrics struct {
 	AvgDeliveryTimeMs float64   `json:"avgDeliveryTimeMs"`
@@ -228,22 +311,63 @@ func (r *ContactChannelMetrics) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Preferred channel for this contact.
-type ContactDefaultChannel string
+type ContactNewParams struct {
+	// Communication channels for the contact.
+	Channels []ContactNewParamsChannel `json:"channels,omitzero" api:"required"`
+	// Display name for the contact.
+	DisplayName param.Opt[string] `json:"displayName,omitzero"`
+	// Arbitrary metadata to associate with the contact.
+	Metadata map[string]string `json:"metadata,omitzero"`
+	paramObj
+}
 
-const (
-	ContactDefaultChannelSMS       ContactDefaultChannel = "sms"
-	ContactDefaultChannelWhatsapp  ContactDefaultChannel = "whatsapp"
-	ContactDefaultChannelTelegram  ContactDefaultChannel = "telegram"
-	ContactDefaultChannelEmail     ContactDefaultChannel = "email"
-	ContactDefaultChannelInstagram ContactDefaultChannel = "instagram"
-	ContactDefaultChannelVoice     ContactDefaultChannel = "voice"
-)
+func (r ContactNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow ContactNewParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Input for creating a contact channel.
+//
+// The properties Channel, Identifier are required.
+type ContactNewParamsChannel struct {
+	// Channel type.
+	//
+	// Any of "sms", "whatsapp", "email", "telegram", "instagram", "messenger",
+	// "voice".
+	Channel string `json:"channel,omitzero" api:"required"`
+	// Channel identifier (phone number in E.164 format or email address).
+	Identifier string `json:"identifier" api:"required"`
+	// ISO country code for phone numbers.
+	CountryCode param.Opt[string] `json:"countryCode,omitzero"`
+	// Whether this should be the primary channel for its type.
+	IsPrimary param.Opt[bool] `json:"isPrimary,omitzero"`
+	// Optional label for the channel.
+	Label param.Opt[string] `json:"label,omitzero"`
+	paramObj
+}
+
+func (r ContactNewParamsChannel) MarshalJSON() (data []byte, err error) {
+	type shadow ContactNewParamsChannel
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactNewParamsChannel) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactNewParamsChannel](
+		"channel", "sms", "whatsapp", "email", "telegram", "instagram", "messenger", "voice",
+	)
+}
 
 type ContactUpdateParams struct {
 	// Preferred channel for this contact. Set to null to clear.
 	//
-	// Any of "sms", "whatsapp", "telegram", "email", "instagram", "voice".
+	// Any of "sms", "whatsapp", "telegram", "email", "instagram", "messenger",
+	// "voice".
 	DefaultChannel ContactUpdateParamsDefaultChannel `json:"defaultChannel,omitzero"`
 	Metadata       map[string]string                 `json:"metadata,omitzero"`
 	paramObj
@@ -266,6 +390,7 @@ const (
 	ContactUpdateParamsDefaultChannelTelegram  ContactUpdateParamsDefaultChannel = "telegram"
 	ContactUpdateParamsDefaultChannelEmail     ContactUpdateParamsDefaultChannel = "email"
 	ContactUpdateParamsDefaultChannelInstagram ContactUpdateParamsDefaultChannel = "instagram"
+	ContactUpdateParamsDefaultChannelMessenger ContactUpdateParamsDefaultChannel = "messenger"
 	ContactUpdateParamsDefaultChannelVoice     ContactUpdateParamsDefaultChannel = "voice"
 )
 
@@ -282,4 +407,19 @@ func (r ContactListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type ContactMergeParams struct {
+	// ID of the contact to merge into the target contact. The source contact will be
+	// marked as merged.
+	SourceContactID string `json:"sourceContactId" api:"required"`
+	paramObj
+}
+
+func (r ContactMergeParams) MarshalJSON() (data []byte, err error) {
+	type shadow ContactMergeParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactMergeParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }

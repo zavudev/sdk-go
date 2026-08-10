@@ -13,6 +13,41 @@ import (
 	"github.com/zavudev/sdk-go/option"
 )
 
+func TestContactNewWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Contacts.New(context.TODO(), zavudev.ContactNewParams{
+		Channels: []zavudev.ContactNewParamsChannel{{
+			Channel:     "sms",
+			Identifier:  "+14155551234",
+			CountryCode: zavudev.String("US"),
+			IsPrimary:   zavudev.Bool(true),
+			Label:       zavudev.String("work"),
+		}},
+		DisplayName: zavudev.String("John Doe"),
+		Metadata: map[string]string{
+			"foo": "string",
+		},
+	})
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestContactGet(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -86,6 +121,81 @@ func TestContactListWithOptionalParams(t *testing.T) {
 		Limit:       zavudev.Int(100),
 		PhoneNumber: zavudev.String("phoneNumber"),
 	})
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestContactDelete(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	err := client.Contacts.Delete(context.TODO(), "contactId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestContactDismissMergeSuggestion(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	err := client.Contacts.DismissMergeSuggestion(context.TODO(), "contactId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestContactMerge(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Contacts.Merge(
+		context.TODO(),
+		"contactId",
+		zavudev.ContactMergeParams{
+			SourceContactID: "jx7xyz789",
+		},
+	)
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

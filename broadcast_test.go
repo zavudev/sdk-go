@@ -31,10 +31,16 @@ func TestBroadcastNewWithOptionalParams(t *testing.T) {
 		Channel: zavudev.BroadcastChannelSMS,
 		Name:    "Black Friday Sale",
 		Content: zavudev.BroadcastContentParam{
-			Filename:   zavudev.String("filename"),
-			MediaID:    zavudev.String("mediaId"),
-			MediaURL:   zavudev.String("mediaUrl"),
-			MimeType:   zavudev.String("mimeType"),
+			Filename: zavudev.String("filename"),
+			MediaID:  zavudev.String("mediaId"),
+			MediaURL: zavudev.String("mediaUrl"),
+			MimeType: zavudev.String("mimeType"),
+			TemplateButtonVariables: map[string]string{
+				"foo": "string",
+			},
+			TemplateHeaderVariables: map[string]string{
+				"foo": "string",
+			},
 			TemplateID: zavudev.String("templateId"),
 			TemplateVariables: map[string]string{
 				"foo": "string",
@@ -101,10 +107,16 @@ func TestBroadcastUpdateWithOptionalParams(t *testing.T) {
 		"broadcastId",
 		zavudev.BroadcastUpdateParams{
 			Content: zavudev.BroadcastContentParam{
-				Filename:   zavudev.String("filename"),
-				MediaID:    zavudev.String("mediaId"),
-				MediaURL:   zavudev.String("mediaUrl"),
-				MimeType:   zavudev.String("mimeType"),
+				Filename: zavudev.String("filename"),
+				MediaID:  zavudev.String("mediaId"),
+				MediaURL: zavudev.String("mediaUrl"),
+				MimeType: zavudev.String("mimeType"),
+				TemplateButtonVariables: map[string]string{
+					"foo": "string",
+				},
+				TemplateHeaderVariables: map[string]string{
+					"foo": "string",
+				},
 				TemplateID: zavudev.String("templateId"),
 				TemplateVariables: map[string]string{
 					"foo": "string",
@@ -201,6 +213,29 @@ func TestBroadcastCancel(t *testing.T) {
 	}
 }
 
+func TestBroadcastEscalateReview(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Broadcasts.EscalateReview(context.TODO(), "broadcastId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestBroadcastProgress(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -244,6 +279,29 @@ func TestBroadcastReschedule(t *testing.T) {
 			ScheduledAt: time.Now(),
 		},
 	)
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestBroadcastRetryReview(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Broadcasts.RetryReview(context.TODO(), "broadcastId")
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

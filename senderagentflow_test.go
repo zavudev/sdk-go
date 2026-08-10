@@ -31,12 +31,12 @@ func TestSenderAgentFlowNewWithOptionalParams(t *testing.T) {
 		"senderId",
 		zavudev.SenderAgentFlowNewParams{
 			Name: "Lead Capture",
-			Steps: []zavudev.SenderAgentFlowNewParamsStep{{
+			Steps: []zavudev.FlowStepParam{{
 				ID: "welcome",
 				Config: map[string]any{
 					"text": "bar",
 				},
-				Type:       "message",
+				Type:       zavudev.FlowStepTypeMessage,
 				NextStepID: zavudev.String("ask_name"),
 			}, {
 				ID: "ask_name",
@@ -44,11 +44,11 @@ func TestSenderAgentFlowNewWithOptionalParams(t *testing.T) {
 					"variable": "bar",
 					"prompt":   "bar",
 				},
-				Type:       "collect",
+				Type:       zavudev.FlowStepTypeCollect,
 				NextStepID: zavudev.String("nextStepId"),
 			}},
-			Trigger: zavudev.SenderAgentFlowNewParamsTrigger{
-				Type:     "keyword",
+			Trigger: zavudev.FlowTriggerParam{
+				Type:     zavudev.FlowTriggerTypeKeyword,
 				Intent:   zavudev.String("intent"),
 				Keywords: []string{"info", "pricing", "demo"},
 			},
@@ -117,16 +117,16 @@ func TestSenderAgentFlowUpdateWithOptionalParams(t *testing.T) {
 			Enabled:     zavudev.Bool(true),
 			Name:        zavudev.String("name"),
 			Priority:    zavudev.Int(0),
-			Steps: []zavudev.SenderAgentFlowUpdateParamsStep{{
+			Steps: []zavudev.FlowStepParam{{
 				ID: "id",
 				Config: map[string]any{
 					"foo": "bar",
 				},
-				Type:       "message",
+				Type:       zavudev.FlowStepTypeMessage,
 				NextStepID: zavudev.String("nextStepId"),
 			}},
-			Trigger: zavudev.SenderAgentFlowUpdateParamsTrigger{
-				Type:     "keyword",
+			Trigger: zavudev.FlowTriggerParam{
+				Type:     zavudev.FlowTriggerTypeKeyword,
 				Intent:   zavudev.String("intent"),
 				Keywords: []string{"string"},
 			},
