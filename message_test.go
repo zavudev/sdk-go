@@ -50,10 +50,10 @@ func TestMessageListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Messages.List(context.TODO(), zavudev.MessageListParams{
-		Channel: zavudev.ChannelAuto,
+		Channel: zavudev.MessageListParamsChannelSMS,
 		Cursor:  zavudev.String("cursor"),
 		Limit:   zavudev.Int(100),
-		Status:  zavudev.MessageStatusQueued,
+		Status:  zavudev.MessageListParamsStatusQueued,
 		To:      zavudev.String("to"),
 	})
 	if err != nil {
@@ -109,7 +109,14 @@ func TestMessageSendWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Messages.Send(context.TODO(), zavudev.MessageSendParams{
-		To:      "+56912345678",
+		To: "+56912345678",
+		Attachments: []zavudev.MessageSendParamsAttachment{{
+			Filename:    "invoice.pdf",
+			Content:     zavudev.String("content"),
+			ContentID:   zavudev.String("logo"),
+			ContentType: zavudev.String("application/pdf"),
+			Path:        zavudev.String("https://example.com"),
+		}},
 		Channel: zavudev.ChannelAuto,
 		Content: zavudev.MessageContentParam{
 			Buttons: []zavudev.MessageContentButtonParam{{
@@ -120,17 +127,28 @@ func TestMessageSendWithOptionalParams(t *testing.T) {
 				Name:   zavudev.String("name"),
 				Phones: []string{"string"},
 			}},
-			Emoji:            zavudev.String("emoji"),
-			Filename:         zavudev.String("invoice.pdf"),
-			Latitude:         zavudev.Float(0),
-			ListButton:       zavudev.String("listButton"),
-			LocationAddress:  zavudev.String("locationAddress"),
-			LocationName:     zavudev.String("locationName"),
-			Longitude:        zavudev.Float(0),
-			MediaID:          zavudev.String("mediaId"),
-			MediaURL:         zavudev.String("https://example.com/image.jpg"),
-			MimeType:         zavudev.String("image/jpeg"),
-			ReactToMessageID: zavudev.String("reactToMessageId"),
+			CtaDisplayText:           zavudev.String("See Dates"),
+			CtaHeaderMediaURL:        zavudev.String("https://example.com"),
+			CtaHeaderText:            zavudev.String("ctaHeaderText"),
+			CtaHeaderType:            zavudev.MessageContentCtaHeaderTypeText,
+			CtaURL:                   zavudev.String("https://example.com/schedule"),
+			Emoji:                    zavudev.String("emoji"),
+			Filename:                 zavudev.String("invoice.pdf"),
+			FooterText:               zavudev.String("Dates subject to change."),
+			Latitude:                 zavudev.Float(0),
+			ListButton:               zavudev.String("listButton"),
+			LocationAddress:          zavudev.String("locationAddress"),
+			LocationName:             zavudev.String("locationName"),
+			Longitude:                zavudev.Float(0),
+			MediaID:                  zavudev.String("mediaId"),
+			MediaURL:                 zavudev.String("https://example.com/image.jpg"),
+			MimeType:                 zavudev.String("image/jpeg"),
+			ReactToMessageID:         zavudev.String("reactToMessageId"),
+			ReplyToFrom:              zavudev.String("replyToFrom"),
+			ReplyToMessageID:         zavudev.String("replyToMessageId"),
+			ReplyToMessageType:       zavudev.String("replyToMessageType"),
+			ReplyToProviderMessageID: zavudev.String("replyToProviderMessageId"),
+			ReplyToText:              zavudev.String("replyToText"),
 			Sections: []zavudev.MessageContentSectionParam{{
 				Rows: []zavudev.MessageContentSectionRowParam{{
 					ID:          "id",
@@ -139,6 +157,12 @@ func TestMessageSendWithOptionalParams(t *testing.T) {
 				}},
 				Title: "title",
 			}},
+			TemplateButtonVariables: map[string]string{
+				"0": "abc-report-token",
+			},
+			TemplateHeaderVariables: map[string]string{
+				"1": "Jorge y Laura",
+			},
 			TemplateID: zavudev.String("templateId"),
 			TemplateVariables: map[string]string{
 				"1": "John",
@@ -158,6 +182,35 @@ func TestMessageSendWithOptionalParams(t *testing.T) {
 		VoiceLanguage: zavudev.String("es-ES"),
 		ZavuSender:    zavudev.String("sender_12345"),
 	})
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMessageShowTypingWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Messages.ShowTyping(
+		context.TODO(),
+		"messageId",
+		zavudev.MessageShowTypingParams{
+			ZavuSender: zavudev.String("sender_12345"),
+		},
+	)
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

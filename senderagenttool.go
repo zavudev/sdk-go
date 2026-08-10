@@ -4,6 +4,7 @@ package zavudev
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -127,7 +128,16 @@ func (r *SenderAgentToolService) Delete(ctx context.Context, toolID string, body
 	return err
 }
 
-// Test a tool by triggering its webhook with test parameters.
+// Run a tool with the parameters you supply and return what it answered.
+//
+// The call is synchronous: the response carries the tool's status, body, and
+// duration, so a green result is evidence the tool ran rather than evidence it was
+// accepted. Each run is also recorded and readable afterwards via
+// `GET /v1/senders/{senderId}/agent/tools/{toolId}/test-runs`.
+//
+// A tool that answers with an error is reported as a run with `success: false` —
+// the endpoint itself still returns 200. This fires the tool's real webhook, so a
+// test has whatever side effects the tool has.
 func (r *SenderAgentToolService) Test(ctx context.Context, toolID string, params SenderAgentToolTestParams, opts ...option.RequestOption) (res *SenderAgentToolTestResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.SenderID == "" {
@@ -148,26 +158,35 @@ type AgentTool struct {
 	AgentID   string    `json:"agentId" api:"required"`
 	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
 	// Description for the LLM to understand when to use this tool.
-	Description string              `json:"description" api:"required"`
-	Enabled     bool                `json:"enabled" api:"required"`
-	Name        string              `json:"name" api:"required"`
-	Parameters  AgentToolParameters `json:"parameters" api:"required"`
-	UpdatedAt   time.Time           `json:"updatedAt" api:"required" format:"date-time"`
+	Description string             `json:"description" api:"required"`
+	Enabled     bool               `json:"enabled" api:"required"`
+	Name        string             `json:"name" api:"required"`
+	Parameters  ToolParametersResp `json:"parameters" api:"required"`
+	UpdatedAt   time.Time          `json:"updatedAt" api:"required" format:"date-time"`
 	// HTTPS URL to call when the tool is executed.
 	WebhookURL string `json:"webhookUrl" api:"required" format:"uri"`
+	// Signing secret for this tool's webhook. **Returned only when the tool is
+	// created**, never on a later read.
+	//
+	// Zavu generates one if you do not supply it, and signs every call to this tool
+	// with it: `X-Zavu-Signature: <hex>`, the HMAC-SHA256 of the request body. Verify
+	// it before trusting the call. Lost it? Rotate with
+	// `POST /v1/senders/{senderId}/agent/tools/{toolId}/webhook/secret`.
+	WebhookSecret string `json:"webhookSecret"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		AgentID     respjson.Field
-		CreatedAt   respjson.Field
-		Description respjson.Field
-		Enabled     respjson.Field
-		Name        respjson.Field
-		Parameters  respjson.Field
-		UpdatedAt   respjson.Field
-		WebhookURL  respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID            respjson.Field
+		AgentID       respjson.Field
+		CreatedAt     respjson.Field
+		Description   respjson.Field
+		Enabled       respjson.Field
+		Name          respjson.Field
+		Parameters    respjson.Field
+		UpdatedAt     respjson.Field
+		WebhookURL    respjson.Field
+		WebhookSecret respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
 	} `json:"-"`
 }
 
@@ -177,11 +196,11 @@ func (r *AgentTool) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type AgentToolParameters struct {
-	Properties map[string]AgentToolParametersProperty `json:"properties" api:"required"`
-	Required   []string                               `json:"required" api:"required"`
+type ToolParametersResp struct {
+	Properties map[string]ToolParametersPropertyResp `json:"properties" api:"required"`
+	Required   []string                              `json:"required" api:"required"`
 	// Any of "object".
-	Type string `json:"type" api:"required"`
+	Type ToolParametersType `json:"type" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Properties  respjson.Field
@@ -193,12 +212,21 @@ type AgentToolParameters struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r AgentToolParameters) RawJSON() string { return r.JSON.raw }
-func (r *AgentToolParameters) UnmarshalJSON(data []byte) error {
+func (r ToolParametersResp) RawJSON() string { return r.JSON.raw }
+func (r *ToolParametersResp) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type AgentToolParametersProperty struct {
+// ToParam converts this ToolParametersResp to a ToolParameters.
+//
+// Warning: the fields of the param type will not be present. ToParam should only
+// be used at the last possible moment before sending a request. Test for this with
+// ToolParameters.Overrides()
+func (r ToolParametersResp) ToParam() ToolParameters {
+	return param.Override[ToolParameters](json.RawMessage(r.RawJSON()))
+}
+
+type ToolParametersPropertyResp struct {
 	Description string `json:"description"`
 	Type        string `json:"type"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -211,8 +239,45 @@ type AgentToolParametersProperty struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r AgentToolParametersProperty) RawJSON() string { return r.JSON.raw }
-func (r *AgentToolParametersProperty) UnmarshalJSON(data []byte) error {
+func (r ToolParametersPropertyResp) RawJSON() string { return r.JSON.raw }
+func (r *ToolParametersPropertyResp) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ToolParametersType string
+
+const (
+	ToolParametersTypeObject ToolParametersType = "object"
+)
+
+// The properties Properties, Required, Type are required.
+type ToolParameters struct {
+	Properties map[string]ToolParametersProperty `json:"properties,omitzero" api:"required"`
+	Required   []string                          `json:"required,omitzero" api:"required"`
+	// Any of "object".
+	Type ToolParametersType `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r ToolParameters) MarshalJSON() (data []byte, err error) {
+	type shadow ToolParameters
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ToolParameters) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ToolParametersProperty struct {
+	Description param.Opt[string] `json:"description,omitzero"`
+	Type        param.Opt[string] `json:"type,omitzero"`
+	paramObj
+}
+
+func (r ToolParametersProperty) MarshalJSON() (data []byte, err error) {
+	type shadow ToolParametersProperty
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ToolParametersProperty) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -265,10 +330,12 @@ func (r *SenderAgentToolUpdateResponse) UnmarshalJSON(data []byte) error {
 }
 
 type SenderAgentToolTestResponse struct {
-	Scheduled bool `json:"scheduled" api:"required"`
+	// One run of a tool triggered from the test endpoint. Recorded so a test is
+	// verifiable after the fact rather than only visible in the response.
+	Run SenderAgentToolTestResponseRun `json:"run" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Scheduled   respjson.Field
+		Run         respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -280,14 +347,57 @@ func (r *SenderAgentToolTestResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// One run of a tool triggered from the test endpoint. Recorded so a test is
+// verifiable after the fact rather than only visible in the response.
+type SenderAgentToolTestResponseRun struct {
+	ID         string    `json:"id" api:"required"`
+	CreatedAt  time.Time `json:"createdAt" api:"required" format:"date-time"`
+	DurationMs int64     `json:"durationMs" api:"required"`
+	// Whether the tool returned without error. A tool that answered with a non-2xx
+	// status is a failed run, not an error of this endpoint.
+	Success bool   `json:"success" api:"required"`
+	ToolID  string `json:"toolId" api:"required"`
+	// Why the run failed, when it did.
+	Error string `json:"error" api:"nullable"`
+	// The parameters the tool was called with.
+	Params map[string]any `json:"params"`
+	// The tool's response body, truncated.
+	Response string `json:"response" api:"nullable"`
+	// HTTP status the tool's webhook returned. Absent for tools that do not go over
+	// HTTP.
+	StatusCode int64 `json:"statusCode" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CreatedAt   respjson.Field
+		DurationMs  respjson.Field
+		Success     respjson.Field
+		ToolID      respjson.Field
+		Error       respjson.Field
+		Params      respjson.Field
+		Response    respjson.Field
+		StatusCode  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SenderAgentToolTestResponseRun) RawJSON() string { return r.JSON.raw }
+func (r *SenderAgentToolTestResponseRun) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SenderAgentToolNewParams struct {
-	Description string                             `json:"description" api:"required"`
-	Name        string                             `json:"name" api:"required"`
-	Parameters  SenderAgentToolNewParamsParameters `json:"parameters,omitzero" api:"required"`
+	Description string         `json:"description" api:"required"`
+	Name        string         `json:"name" api:"required"`
+	Parameters  ToolParameters `json:"parameters,omitzero" api:"required"`
 	// Must be HTTPS.
 	WebhookURL string          `json:"webhookUrl" api:"required" format:"uri"`
 	Enabled    param.Opt[bool] `json:"enabled,omitzero"`
-	// Optional secret for webhook signature verification.
+	// Signing secret for the webhook. Optional: Zavu generates one when omitted and
+	// returns it on this response only. Supply your own if you already have a secret
+	// you want reused.
 	WebhookSecret param.Opt[string] `json:"webhookSecret,omitzero"`
 	paramObj
 }
@@ -300,56 +410,19 @@ func (r *SenderAgentToolNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The properties Properties, Required, Type are required.
-type SenderAgentToolNewParamsParameters struct {
-	Properties map[string]SenderAgentToolNewParamsParametersProperty `json:"properties,omitzero" api:"required"`
-	Required   []string                                              `json:"required,omitzero" api:"required"`
-	// Any of "object".
-	Type string `json:"type,omitzero" api:"required"`
-	paramObj
-}
-
-func (r SenderAgentToolNewParamsParameters) MarshalJSON() (data []byte, err error) {
-	type shadow SenderAgentToolNewParamsParameters
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *SenderAgentToolNewParamsParameters) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[SenderAgentToolNewParamsParameters](
-		"type", "object",
-	)
-}
-
-type SenderAgentToolNewParamsParametersProperty struct {
-	Description param.Opt[string] `json:"description,omitzero"`
-	Type        param.Opt[string] `json:"type,omitzero"`
-	paramObj
-}
-
-func (r SenderAgentToolNewParamsParametersProperty) MarshalJSON() (data []byte, err error) {
-	type shadow SenderAgentToolNewParamsParametersProperty
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *SenderAgentToolNewParamsParametersProperty) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 type SenderAgentToolGetParams struct {
 	SenderID string `path:"senderId" api:"required" json:"-"`
 	paramObj
 }
 
 type SenderAgentToolUpdateParams struct {
-	SenderID      string                                `path:"senderId" api:"required" json:"-"`
-	WebhookSecret param.Opt[string]                     `json:"webhookSecret,omitzero"`
-	Description   param.Opt[string]                     `json:"description,omitzero"`
-	Enabled       param.Opt[bool]                       `json:"enabled,omitzero"`
-	Name          param.Opt[string]                     `json:"name,omitzero"`
-	WebhookURL    param.Opt[string]                     `json:"webhookUrl,omitzero" format:"uri"`
-	Parameters    SenderAgentToolUpdateParamsParameters `json:"parameters,omitzero"`
+	SenderID      string            `path:"senderId" api:"required" json:"-"`
+	WebhookSecret param.Opt[string] `json:"webhookSecret,omitzero"`
+	Description   param.Opt[string] `json:"description,omitzero"`
+	Enabled       param.Opt[bool]   `json:"enabled,omitzero"`
+	Name          param.Opt[string] `json:"name,omitzero"`
+	WebhookURL    param.Opt[string] `json:"webhookUrl,omitzero" format:"uri"`
+	Parameters    ToolParameters    `json:"parameters,omitzero"`
 	paramObj
 }
 
@@ -358,43 +431,6 @@ func (r SenderAgentToolUpdateParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *SenderAgentToolUpdateParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// The properties Properties, Required, Type are required.
-type SenderAgentToolUpdateParamsParameters struct {
-	Properties map[string]SenderAgentToolUpdateParamsParametersProperty `json:"properties,omitzero" api:"required"`
-	Required   []string                                                 `json:"required,omitzero" api:"required"`
-	// Any of "object".
-	Type string `json:"type,omitzero" api:"required"`
-	paramObj
-}
-
-func (r SenderAgentToolUpdateParamsParameters) MarshalJSON() (data []byte, err error) {
-	type shadow SenderAgentToolUpdateParamsParameters
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *SenderAgentToolUpdateParamsParameters) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[SenderAgentToolUpdateParamsParameters](
-		"type", "object",
-	)
-}
-
-type SenderAgentToolUpdateParamsParametersProperty struct {
-	Description param.Opt[string] `json:"description,omitzero"`
-	Type        param.Opt[string] `json:"type,omitzero"`
-	paramObj
-}
-
-func (r SenderAgentToolUpdateParamsParametersProperty) MarshalJSON() (data []byte, err error) {
-	type shadow SenderAgentToolUpdateParamsParametersProperty
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *SenderAgentToolUpdateParamsParametersProperty) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

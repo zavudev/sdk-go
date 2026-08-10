@@ -175,7 +175,16 @@ func (r *BroadcastContactAddParams) UnmarshalJSON(data []byte) error {
 type BroadcastContactAddParamsContact struct {
 	// Phone number (E.164) or email address.
 	Recipient string `json:"recipient" api:"required"`
-	// Per-contact template variables to personalize the message.
+	// Per-contact button variables for dynamic URL/OTP buttons. Keys are the button
+	// index (0, 1, 2).
+	TemplateButtonVariables map[string]string `json:"templateButtonVariables,omitzero"`
+	// Per-contact value for a text-header variable, keyed by `1`. If omitted, Zavu
+	// resolves the header from `templateVariables` by the header placeholder's name.
+	TemplateHeaderVariables map[string]string `json:"templateHeaderVariables,omitzero"`
+	// Per-contact body variables. Key them to match the template body: by position
+	// (`1`, `2`, ...) for positional templates, or by name (e.g. `customer_name`) for
+	// named templates. Zavu detects the template's format and sends the correct
+	// payload to Meta. Do not mix positional and named keys.
 	TemplateVariables map[string]string `json:"templateVariables,omitzero"`
 	paramObj
 }

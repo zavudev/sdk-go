@@ -112,7 +112,11 @@ func (r *TemplateService) Submit(ctx context.Context, templateID string, body Te
 
 type Template struct {
 	ID string `json:"id" api:"required"`
-	// Template body with variables: {{1}}, {{2}}, etc.
+	// Default template body with variables: positional ({{1}}, {{2}}) or named
+	// ({{customer_name}}, {{contact.first_name}}). Templates created in Zavu are
+	// submitted to Meta as positional; templates imported from a WhatsApp Business
+	// Account keep their original format (named or positional). Used when no
+	// channel-specific body is set.
 	Body string `json:"body" api:"required"`
 	// WhatsApp template category.
 	//
@@ -120,7 +124,7 @@ type Template struct {
 	Category WhatsappCategory `json:"category" api:"required"`
 	// Language code.
 	Language string `json:"language" api:"required"`
-	// Template name (must match WhatsApp template name).
+	// Template name. For WhatsApp, must match the approved template name in Meta.
 	Name string `json:"name" api:"required"`
 	// Add 'Do not share this code' disclaimer. Only for AUTHENTICATION templates.
 	AddSecurityRecommendation bool `json:"addSecurityRecommendation"`
@@ -135,9 +139,15 @@ type Template struct {
 	HeaderContent string `json:"headerContent"`
 	// Type of header (text, image, video, document).
 	HeaderType string `json:"headerType"`
+	// Channel-specific body for Instagram messages. Falls back to `body` if not set.
+	InstagramBody string `json:"instagramBody"`
+	// Channel-specific body for SMS messages. Falls back to `body` if not set.
+	SMSBody string `json:"smsBody"`
 	// Any of "draft", "pending", "approved", "rejected".
-	Status    TemplateStatus `json:"status"`
-	UpdatedAt time.Time      `json:"updatedAt" format:"date-time"`
+	Status TemplateStatus `json:"status"`
+	// Channel-specific body for Telegram messages. Falls back to `body` if not set.
+	TelegramBody string    `json:"telegramBody"`
+	UpdatedAt    time.Time `json:"updatedAt" format:"date-time"`
 	// List of variable names for documentation.
 	Variables []string `json:"variables"`
 	// WhatsApp-specific template information.
@@ -156,7 +166,10 @@ type Template struct {
 		Footer                    respjson.Field
 		HeaderContent             respjson.Field
 		HeaderType                respjson.Field
+		InstagramBody             respjson.Field
+		SMSBody                   respjson.Field
 		Status                    respjson.Field
+		TelegramBody              respjson.Field
 		UpdatedAt                 respjson.Field
 		Variables                 respjson.Field
 		Whatsapp                  respjson.Field
@@ -172,6 +185,9 @@ func (r *Template) UnmarshalJSON(data []byte) error {
 }
 
 type TemplateButton struct {
+	// Sample value used to substitute `{{1}}` in the URL when submitting the template
+	// to Meta for review. Only present for dynamic URL buttons.
+	Example string `json:"example"`
 	// OTP button type. Required when type is 'otp'.
 	//
 	// Any of "COPY_CODE", "ONE_TAP".
@@ -182,11 +198,12 @@ type TemplateButton struct {
 	// Android app signature hash. Required for ONE_TAP buttons.
 	SignatureHash string `json:"signatureHash"`
 	Text          string `json:"text"`
-	// Any of "quick_reply", "url", "phone", "otp".
+	// Any of "quick_reply", "url", "phone", "otp", "request_contact_info".
 	Type string `json:"type"`
 	URL  string `json:"url"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Example       respjson.Field
 		OtpType       respjson.Field
 		PackageName   respjson.Field
 		PhoneNumber   respjson.Field
@@ -248,6 +265,7 @@ const (
 )
 
 type TemplateNewParams struct {
+	// Default template body. Used when no channel-specific body is set.
 	Body     string `json:"body" api:"required"`
 	Language string `json:"language" api:"required"`
 	Name     string `json:"name" api:"required"`
@@ -255,9 +273,23 @@ type TemplateNewParams struct {
 	AddSecurityRecommendation param.Opt[bool] `json:"addSecurityRecommendation,omitzero"`
 	// Code expiration time in minutes. Only for AUTHENTICATION templates.
 	CodeExpirationMinutes param.Opt[int64] `json:"codeExpirationMinutes,omitzero"`
+	// Footer text for the template.
+	Footer param.Opt[string] `json:"footer,omitzero"`
+	// Header content (text string or media URL).
+	HeaderContent param.Opt[string] `json:"headerContent,omitzero"`
+	// Channel-specific body for Instagram. Falls back to `body` if not set.
+	InstagramBody param.Opt[string] `json:"instagramBody,omitzero"`
+	// Channel-specific body for SMS. Falls back to `body` if not set.
+	SMSBody param.Opt[string] `json:"smsBody,omitzero"`
+	// Channel-specific body for Telegram. Falls back to `body` if not set.
+	TelegramBody param.Opt[string] `json:"telegramBody,omitzero"`
 	// Template buttons (max 3).
-	Buttons   []TemplateNewParamsButton `json:"buttons,omitzero"`
-	Variables []string                  `json:"variables,omitzero"`
+	Buttons []TemplateNewParamsButton `json:"buttons,omitzero"`
+	// Type of header for the template.
+	//
+	// Any of "text", "image", "video", "document".
+	HeaderType TemplateNewParamsHeaderType `json:"headerType,omitzero"`
+	Variables  []string                    `json:"variables,omitzero"`
 	// WhatsApp template category.
 	//
 	// Any of "UTILITY", "MARKETING", "AUTHENTICATION".
@@ -273,17 +305,30 @@ func (r *TemplateNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The properties Text, Type are required.
+// The property Type is required.
 type TemplateNewParamsButton struct {
-	Text string `json:"text" api:"required"`
-	// Any of "quick_reply", "url", "phone", "otp".
+	// `request_contact_info` renders a fixed **Share Contact Info** button that asks
+	// the recipient to share their phone number — useful when a contact adopted a
+	// WhatsApp username and you only know their BSUID. It takes no other fields.
+	//
+	// Any of "quick_reply", "url", "phone", "otp", "request_contact_info".
 	Type string `json:"type,omitzero" api:"required"`
+	// Sample value Meta uses to review templates with a dynamic URL button.
+	// Substituted into `{{1}}` of the URL when the template is submitted to Meta. Only
+	// meaningful when `url` contains `{{1}}`; ignored for static URLs.
+	Example param.Opt[string] `json:"example,omitzero"`
 	// Android package name. Required for ONE_TAP buttons.
 	PackageName param.Opt[string] `json:"packageName,omitzero"`
 	PhoneNumber param.Opt[string] `json:"phoneNumber,omitzero"`
 	// Android app signature hash. Required for ONE_TAP buttons.
 	SignatureHash param.Opt[string] `json:"signatureHash,omitzero"`
-	URL           param.Opt[string] `json:"url,omitzero" format:"uri"`
+	// Button label. Required for every type except `request_contact_info`, whose label
+	// is fixed by WhatsApp.
+	Text param.Opt[string] `json:"text,omitzero"`
+	// Button destination. Use `{{1}}` exactly once for a dynamic URL (e.g.
+	// `https://example.com/orders/{{1}}`); WhatsApp only accepts the strict `{{1}}`
+	// form. Static URLs must not contain any `{{...}}` placeholder.
+	URL param.Opt[string] `json:"url,omitzero" format:"uri"`
 	// Required when type is 'otp'. COPY_CODE shows copy button, ONE_TAP enables
 	// Android autofill.
 	//
@@ -302,12 +347,22 @@ func (r *TemplateNewParamsButton) UnmarshalJSON(data []byte) error {
 
 func init() {
 	apijson.RegisterFieldValidator[TemplateNewParamsButton](
-		"type", "quick_reply", "url", "phone", "otp",
+		"type", "quick_reply", "url", "phone", "otp", "request_contact_info",
 	)
 	apijson.RegisterFieldValidator[TemplateNewParamsButton](
 		"otpType", "COPY_CODE", "ONE_TAP",
 	)
 }
+
+// Type of header for the template.
+type TemplateNewParamsHeaderType string
+
+const (
+	TemplateNewParamsHeaderTypeText     TemplateNewParamsHeaderType = "text"
+	TemplateNewParamsHeaderTypeImage    TemplateNewParamsHeaderType = "image"
+	TemplateNewParamsHeaderTypeVideo    TemplateNewParamsHeaderType = "video"
+	TemplateNewParamsHeaderTypeDocument TemplateNewParamsHeaderType = "document"
+)
 
 type TemplateListParams struct {
 	Cursor param.Opt[string] `query:"cursor,omitzero" json:"-"`

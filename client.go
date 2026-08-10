@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/zavudev/sdk-go/internal/requestconfig"
 	"github.com/zavudev/sdk-go/option"
@@ -26,17 +27,32 @@ type Client struct {
 	PhoneNumbers        PhoneNumberService
 	Addresses           AddressService
 	RegulatoryDocuments RegulatoryDocumentService
+	Invitations         InvitationService
+	URLs                URLService
+	Balance             BalanceService
+	SubAccounts         SubAccountService
+	Number10dlc         Number10dlcService
+	Me                  MeService
+	Functions           FunctionService
 }
 
 // DefaultClientOptions read from the environment (ZAVUDEV_API_KEY,
 // ZAVUDEV_BASE_URL). This should be used to initialize new clients.
 func DefaultClientOptions() []option.RequestOption {
-	defaults := []option.RequestOption{option.WithEnvironmentProduction()}
+	defaults := []option.RequestOption{option.WithHTTPClient(defaultHTTPClient()), option.WithEnvironmentProduction()}
 	if o, ok := os.LookupEnv("ZAVUDEV_BASE_URL"); ok {
 		defaults = append(defaults, option.WithBaseURL(o))
 	}
 	if o, ok := os.LookupEnv("ZAVUDEV_API_KEY"); ok {
 		defaults = append(defaults, option.WithAPIKey(o))
+	}
+	if o, ok := os.LookupEnv("ZAVUDEV_CUSTOM_HEADERS"); ok {
+		for _, line := range strings.Split(o, "\n") {
+			colon := strings.Index(line, ":")
+			if colon >= 0 {
+				defaults = append(defaults, option.WithHeader(strings.TrimSpace(line[:colon]), strings.TrimSpace(line[colon+1:])))
+			}
+		}
 	}
 	return defaults
 }
@@ -59,6 +75,13 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.PhoneNumbers = NewPhoneNumberService(opts...)
 	r.Addresses = NewAddressService(opts...)
 	r.RegulatoryDocuments = NewRegulatoryDocumentService(opts...)
+	r.Invitations = NewInvitationService(opts...)
+	r.URLs = NewURLService(opts...)
+	r.Balance = NewBalanceService(opts...)
+	r.SubAccounts = NewSubAccountService(opts...)
+	r.Number10dlc = NewNumber10dlcService(opts...)
+	r.Me = NewMeService(opts...)
+	r.Functions = NewFunctionService(opts...)
 
 	return
 }
