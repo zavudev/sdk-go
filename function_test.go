@@ -33,6 +33,11 @@ func TestFunctionNewWithOptionalParams(t *testing.T) {
 			"openai": "^4.20.0",
 		},
 		Description: zavudev.String("Replies to order status questions on WhatsApp."),
+		Entrypoint:  zavudev.String("index.ts"),
+		Files: map[string]string{
+			"index.ts":      "import { formatOrder } from './lib/orders';\n\nexport default async function handler(event) {\n  return { statusCode: 200, body: formatOrder(event) };\n}\n",
+			"lib/orders.ts": "export function formatOrder(event) {\n  return JSON.stringify(event);\n}\n",
+		},
 		HTTPEnabled: zavudev.Bool(true),
 		MemoryMB:    128,
 		Runtime:     zavudev.FunctionNewParamsRuntimeNodejs24,
@@ -91,6 +96,11 @@ func TestFunctionUpdateWithOptionalParams(t *testing.T) {
 			Dependencies: map[string]string{
 				"foo": "string",
 			},
+			Entrypoint: zavudev.String("index.ts"),
+			Files: map[string]string{
+				"index.ts":      "import { formatOrder } from './lib/orders';\n\nexport default async function handler(event) {\n  return { statusCode: 200, body: formatOrder(event) };\n}\n",
+				"lib/orders.ts": "export function formatOrder(event) {\n  return JSON.stringify(event);\n}\n",
+			},
 			HTTPEnabled: zavudev.Bool(true),
 			SourceCode:  zavudev.String("sourceCode"),
 		},
@@ -146,6 +156,11 @@ func TestFunctionDeployWithOptionalParams(t *testing.T) {
 		zavudev.FunctionDeployParams{
 			Dependencies: map[string]string{
 				"foo": "string",
+			},
+			Entrypoint: zavudev.String("index.ts"),
+			Files: map[string]string{
+				"index.ts":      "import { formatOrder } from './lib/orders';\n\nexport default async function handler(event) {\n  return { statusCode: 200, body: formatOrder(event) };\n}\n",
+				"lib/orders.ts": "export function formatOrder(event) {\n  return JSON.stringify(event);\n}\n",
 			},
 			SourceCode: zavudev.String("sourceCode"),
 		},
