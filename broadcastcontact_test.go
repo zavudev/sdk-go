@@ -63,12 +63,24 @@ func TestBroadcastContactAdd(t *testing.T) {
 		zavudev.BroadcastContactAddParams{
 			Contacts: []zavudev.BroadcastContactAddParamsContact{{
 				Recipient: "+14155551234",
+				TemplateButtonVariables: map[string]string{
+					"0": "abc-report-token",
+				},
+				TemplateHeaderVariables: map[string]string{
+					"1": "Jorge y Laura",
+				},
 				TemplateVariables: map[string]string{
 					"name":     "John",
 					"order_id": "ORD-001",
 				},
 			}, {
 				Recipient: "+14155555678",
+				TemplateButtonVariables: map[string]string{
+					"0": "abc-report-token",
+				},
+				TemplateHeaderVariables: map[string]string{
+					"1": "Jorge y Laura",
+				},
 				TemplateVariables: map[string]string{
 					"name":     "Jane",
 					"order_id": "ORD-002",

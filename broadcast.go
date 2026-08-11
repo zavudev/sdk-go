@@ -123,6 +123,19 @@ func (r *BroadcastService) Cancel(ctx context.Context, broadcastID string, opts 
 	return res, err
 }
 
+// Request manual review by the Zavu team for a rejected broadcast. Use this after
+// automated review rejection if you believe the content is legitimate.
+func (r *BroadcastService) EscalateReview(ctx context.Context, broadcastID string, opts ...option.RequestOption) (res *BroadcastEscalateReviewResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if broadcastID == "" {
+		err = errors.New("missing required broadcastId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/broadcasts/%s/escalate", url.PathEscape(broadcastID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return res, err
+}
+
 // Get real-time progress of a broadcast including delivery counts and estimated
 // completion time.
 func (r *BroadcastService) Progress(ctx context.Context, broadcastID string, opts ...option.RequestOption) (res *BroadcastProgress, err error) {
@@ -149,10 +162,39 @@ func (r *BroadcastService) Reschedule(ctx context.Context, broadcastID string, b
 	return res, err
 }
 
-// Start sending the broadcast immediately or schedule for later. Broadcasts go
-// through automated AI content review before sending. If the review passes, the
-// broadcast proceeds. If rejected, use PATCH to edit content, then call POST
-// /retry-review. Reserves the estimated cost from your balance.
+// Resubmit a rejected broadcast for AI review after editing content. Maximum 3
+// review attempts allowed per broadcast.
+func (r *BroadcastService) RetryReview(ctx context.Context, broadcastID string, opts ...option.RequestOption) (res *BroadcastRetryReviewResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if broadcastID == "" {
+		err = errors.New("missing required broadcastId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/broadcasts/%s/retry-review", url.PathEscape(broadcastID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, nil, &res, opts...)
+	return res, err
+}
+
+// Start sending the broadcast immediately or schedule for later.
+//
+// **Verification is required to send, and there are two of them.** The team must
+// have completed both identity verification (KYC) and business verification (KYB);
+// passing one is not enough. Drafts can be created, edited and kept without
+// either. Every send path — dashboard, API and CLI alike — enforces both,
+// returning `403` with code `kyc_required` or `kyb_required` for whichever is
+// outstanding.
+//
+// **Review depends on the channel, and cannot be bypassed.** A draft is submitted
+// to automated content review here; it does not go straight out. A WhatsApp
+// broadcast built on a Meta-approved template skips review (Meta already vetted
+// the content) and begins sending. An email broadcast sends as soon as the
+// automated review passes. Every other channel moves to `pending_admin_review` and
+// waits for a person. If the review rejects it, use PATCH to edit the content then
+// call POST /retry-review.
+//
+// Calling this on a broadcast that is already `approved` or `scheduled` sends or
+// reschedules it directly, since it has already been reviewed. Reserves the
+// estimated cost from your balance.
 func (r *BroadcastService) Send(ctx context.Context, broadcastID string, body BroadcastSendParams, opts ...option.RequestOption) (res *BroadcastSendResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if broadcastID == "" {
@@ -168,8 +210,7 @@ type Broadcast struct {
 	ID string `json:"id" api:"required"`
 	// Broadcast delivery channel. Use 'smart' for per-contact intelligent routing.
 	//
-	// Any of "smart", "sms", "sms_oneway", "whatsapp", "telegram", "email",
-	// "instagram", "voice".
+	// Any of "smart", "sms", "sms_oneway", "whatsapp", "telegram", "email".
 	Channel   BroadcastChannel `json:"channel" api:"required"`
 	CreatedAt time.Time        `json:"createdAt" api:"required" format:"date-time"`
 	// Type of message for broadcast.
@@ -286,8 +327,6 @@ const (
 	BroadcastChannelWhatsapp  BroadcastChannel = "whatsapp"
 	BroadcastChannelTelegram  BroadcastChannel = "telegram"
 	BroadcastChannelEmail     BroadcastChannel = "email"
-	BroadcastChannelInstagram BroadcastChannel = "instagram"
-	BroadcastChannelVoice     BroadcastChannel = "voice"
 )
 
 type BroadcastContact struct {
@@ -304,24 +343,28 @@ type BroadcastContact struct {
 	ErrorCode    string                 `json:"errorCode"`
 	ErrorMessage string                 `json:"errorMessage"`
 	// Associated message ID after processing.
-	MessageID         string            `json:"messageId"`
-	ProcessedAt       time.Time         `json:"processedAt" format:"date-time"`
-	TemplateVariables map[string]string `json:"templateVariables"`
+	MessageID               string            `json:"messageId"`
+	ProcessedAt             time.Time         `json:"processedAt" format:"date-time"`
+	TemplateButtonVariables map[string]string `json:"templateButtonVariables"`
+	TemplateHeaderVariables map[string]string `json:"templateHeaderVariables"`
+	TemplateVariables       map[string]string `json:"templateVariables"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID                respjson.Field
-		CreatedAt         respjson.Field
-		Recipient         respjson.Field
-		RecipientType     respjson.Field
-		Status            respjson.Field
-		Cost              respjson.Field
-		ErrorCode         respjson.Field
-		ErrorMessage      respjson.Field
-		MessageID         respjson.Field
-		ProcessedAt       respjson.Field
-		TemplateVariables respjson.Field
-		ExtraFields       map[string]respjson.Field
-		raw               string
+		ID                      respjson.Field
+		CreatedAt               respjson.Field
+		Recipient               respjson.Field
+		RecipientType           respjson.Field
+		Status                  respjson.Field
+		Cost                    respjson.Field
+		ErrorCode               respjson.Field
+		ErrorMessage            respjson.Field
+		MessageID               respjson.Field
+		ProcessedAt             respjson.Field
+		TemplateButtonVariables respjson.Field
+		TemplateHeaderVariables respjson.Field
+		TemplateVariables       respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
 	} `json:"-"`
 }
 
@@ -360,20 +403,32 @@ type BroadcastContent struct {
 	MediaURL string `json:"mediaUrl"`
 	// MIME type of the media.
 	MimeType string `json:"mimeType"`
+	// Default button variables for dynamic URL/OTP buttons. Keys are the button index
+	// (0, 1, 2). Per-contact values override these.
+	TemplateButtonVariables map[string]string `json:"templateButtonVariables"`
+	// Default value for a text-header variable, keyed by `1` (can be overridden per
+	// contact). If omitted, Zavu resolves the header from `templateVariables` by the
+	// header placeholder's name.
+	TemplateHeaderVariables map[string]string `json:"templateHeaderVariables"`
 	// Template ID for template messages.
 	TemplateID string `json:"templateId"`
-	// Default template variables (can be overridden per contact).
+	// Default body variables (can be overridden per contact). Key them to match the
+	// template body: by position (`1`, `2`, ...) for positional templates, or by name
+	// (e.g. `customer_name`) for named templates. Zavu detects the template's format
+	// and sends the correct payload to Meta. Do not mix positional and named keys.
 	TemplateVariables map[string]string `json:"templateVariables"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Filename          respjson.Field
-		MediaID           respjson.Field
-		MediaURL          respjson.Field
-		MimeType          respjson.Field
-		TemplateID        respjson.Field
-		TemplateVariables respjson.Field
-		ExtraFields       map[string]respjson.Field
-		raw               string
+		Filename                respjson.Field
+		MediaID                 respjson.Field
+		MediaURL                respjson.Field
+		MimeType                respjson.Field
+		TemplateButtonVariables respjson.Field
+		TemplateHeaderVariables respjson.Field
+		TemplateID              respjson.Field
+		TemplateVariables       respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
 	} `json:"-"`
 }
 
@@ -404,7 +459,17 @@ type BroadcastContentParam struct {
 	MimeType param.Opt[string] `json:"mimeType,omitzero"`
 	// Template ID for template messages.
 	TemplateID param.Opt[string] `json:"templateId,omitzero"`
-	// Default template variables (can be overridden per contact).
+	// Default button variables for dynamic URL/OTP buttons. Keys are the button index
+	// (0, 1, 2). Per-contact values override these.
+	TemplateButtonVariables map[string]string `json:"templateButtonVariables,omitzero"`
+	// Default value for a text-header variable, keyed by `1` (can be overridden per
+	// contact). If omitted, Zavu resolves the header from `templateVariables` by the
+	// header placeholder's name.
+	TemplateHeaderVariables map[string]string `json:"templateHeaderVariables,omitzero"`
+	// Default body variables (can be overridden per contact). Key them to match the
+	// template body: by position (`1`, `2`, ...) for positional templates, or by name
+	// (e.g. `customer_name`) for named templates. Zavu detects the template's format
+	// and sends the correct payload to Meta. Do not mix positional and named keys.
 	TemplateVariables map[string]string `json:"templateVariables,omitzero"`
 	paramObj
 }
@@ -568,6 +633,22 @@ func (r *BroadcastCancelResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type BroadcastEscalateReviewResponse struct {
+	Broadcast Broadcast `json:"broadcast" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Broadcast   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BroadcastEscalateReviewResponse) RawJSON() string { return r.JSON.raw }
+func (r *BroadcastEscalateReviewResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type BroadcastRescheduleResponse struct {
 	Broadcast Broadcast `json:"broadcast" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -581,6 +662,22 @@ type BroadcastRescheduleResponse struct {
 // Returns the unmodified JSON received from the API
 func (r BroadcastRescheduleResponse) RawJSON() string { return r.JSON.raw }
 func (r *BroadcastRescheduleResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type BroadcastRetryReviewResponse struct {
+	Broadcast Broadcast `json:"broadcast" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Broadcast   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r BroadcastRetryReviewResponse) RawJSON() string { return r.JSON.raw }
+func (r *BroadcastRetryReviewResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -603,8 +700,7 @@ func (r *BroadcastSendResponse) UnmarshalJSON(data []byte) error {
 type BroadcastNewParams struct {
 	// Broadcast delivery channel. Use 'smart' for per-contact intelligent routing.
 	//
-	// Any of "smart", "sms", "sms_oneway", "whatsapp", "telegram", "email",
-	// "instagram", "voice".
+	// Any of "smart", "sms", "sms_oneway", "whatsapp", "telegram", "email".
 	Channel BroadcastChannel `json:"channel,omitzero" api:"required"`
 	// Name of the broadcast campaign.
 	Name string `json:"name" api:"required"`

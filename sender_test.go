@@ -27,11 +27,18 @@ func TestSenderNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Senders.New(context.TODO(), zavudev.SenderNewParams{
-		Name:          "name",
-		PhoneNumber:   "phoneNumber",
-		SetAsDefault:  zavudev.Bool(true),
-		WebhookEvents: []zavudev.WebhookEvent{zavudev.WebhookEventMessageQueued},
-		WebhookURL:    zavudev.String("https://example.com"),
+		Name:                    "name",
+		EmailAddress:            zavudev.String("noreply@yourdomain.com"),
+		EmailDomainID:           zavudev.String("emailDomainId"),
+		EmailFromName:           zavudev.String("emailFromName"),
+		EmailReceivingEnabled:   zavudev.Bool(true),
+		EnableSMSOneway:         zavudev.Bool(true),
+		EnableVoice:             zavudev.Bool(true),
+		PhoneNumber:             zavudev.String("phoneNumber"),
+		SetAsDefault:            zavudev.Bool(true),
+		WebhookEvents:           []zavudev.WebhookEvent{zavudev.WebhookEventMessageQueued},
+		WebhookSignatureVersion: zavudev.SenderNewParamsWebhookSignatureVersionV2,
+		WebhookURL:              zavudev.String("https://example.com"),
 	})
 	if err != nil {
 		var apierr *zavudev.Error
@@ -82,12 +89,19 @@ func TestSenderUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"senderId",
 		zavudev.SenderUpdateParams{
-			EmailReceivingEnabled: zavudev.Bool(true),
-			Name:                  zavudev.String("name"),
-			SetAsDefault:          zavudev.Bool(true),
-			WebhookActive:         zavudev.Bool(true),
-			WebhookEvents:         []zavudev.WebhookEvent{zavudev.WebhookEventMessageQueued},
-			WebhookURL:            zavudev.String("https://example.com"),
+			EmailAddress:            zavudev.String("noreply@yourdomain.com"),
+			EmailCatchAllEnabled:    zavudev.Bool(true),
+			EmailDomainID:           zavudev.String("emailDomainId"),
+			EmailFromName:           zavudev.String("emailFromName"),
+			EmailReceivingEnabled:   zavudev.Bool(true),
+			EnableSMSOneway:         zavudev.Bool(true),
+			EnableVoice:             zavudev.Bool(true),
+			Name:                    zavudev.String("name"),
+			SetAsDefault:            zavudev.Bool(true),
+			WebhookActive:           zavudev.Bool(true),
+			WebhookEvents:           []zavudev.WebhookEvent{zavudev.WebhookEventMessageQueued},
+			WebhookSignatureVersion: zavudev.SenderUpdateParamsWebhookSignatureVersionV2,
+			WebhookURL:              zavudev.String("https://example.com"),
 		},
 	)
 	if err != nil {

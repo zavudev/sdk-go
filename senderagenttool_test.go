@@ -32,15 +32,15 @@ func TestSenderAgentToolNewWithOptionalParams(t *testing.T) {
 		zavudev.SenderAgentToolNewParams{
 			Description: "Get the status of a customer order",
 			Name:        "get_order_status",
-			Parameters: zavudev.SenderAgentToolNewParamsParameters{
-				Properties: map[string]zavudev.SenderAgentToolNewParamsParametersProperty{
+			Parameters: zavudev.ToolParameters{
+				Properties: map[string]zavudev.ToolParametersProperty{
 					"order_id": {
 						Description: zavudev.String("The order ID to look up"),
 						Type:        zavudev.String("string"),
 					},
 				},
 				Required: []string{"order_id"},
-				Type:     "object",
+				Type:     zavudev.ToolParametersTypeObject,
 			},
 			WebhookURL:    "https://api.example.com/webhooks/order-status",
 			Enabled:       zavudev.Bool(true),
@@ -106,15 +106,15 @@ func TestSenderAgentToolUpdateWithOptionalParams(t *testing.T) {
 			Description: zavudev.String("description"),
 			Enabled:     zavudev.Bool(true),
 			Name:        zavudev.String("name"),
-			Parameters: zavudev.SenderAgentToolUpdateParamsParameters{
-				Properties: map[string]zavudev.SenderAgentToolUpdateParamsParametersProperty{
+			Parameters: zavudev.ToolParameters{
+				Properties: map[string]zavudev.ToolParametersProperty{
 					"foo": {
 						Description: zavudev.String("description"),
 						Type:        zavudev.String("type"),
 					},
 				},
 				Required: []string{"string"},
-				Type:     "object",
+				Type:     zavudev.ToolParametersTypeObject,
 			},
 			WebhookSecret: zavudev.String("webhookSecret"),
 			WebhookURL:    zavudev.String("https://example.com"),
