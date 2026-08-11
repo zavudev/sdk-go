@@ -417,6 +417,12 @@ type FunctionDeployResponseDeployment struct {
 	Status string `json:"status" api:"required"`
 	// Monotonically increasing deployment version, starting at 1.
 	Version int64 `json:"version" api:"required"`
+	// What the build printed: dependency installation, the bundler's output, and the
+	// compiler's message when it failed. Returned when fetching a single deployment,
+	// omitted from the list. Read this first when a deploy fails — `errorMessage` is
+	// often the outer wrapper's summary, and the line that names the broken import or
+	// the syntax error is here.
+	BuildLogs string `json:"buildLogs" api:"nullable"`
 	// Size of the built bundle in bytes. Null until the build finishes.
 	BundleBytes int64     `json:"bundleBytes" api:"nullable"`
 	DeployedAt  time.Time `json:"deployedAt" api:"nullable" format:"date-time"`
@@ -431,6 +437,7 @@ type FunctionDeployResponseDeployment struct {
 		FunctionID      respjson.Field
 		Status          respjson.Field
 		Version         respjson.Field
+		BuildLogs       respjson.Field
 		BundleBytes     respjson.Field
 		DeployedAt      respjson.Field
 		ErrorMessage    respjson.Field
@@ -473,6 +480,12 @@ type FunctionGetDeploymentResponseDeployment struct {
 	Status string `json:"status" api:"required"`
 	// Monotonically increasing deployment version, starting at 1.
 	Version int64 `json:"version" api:"required"`
+	// What the build printed: dependency installation, the bundler's output, and the
+	// compiler's message when it failed. Returned when fetching a single deployment,
+	// omitted from the list. Read this first when a deploy fails — `errorMessage` is
+	// often the outer wrapper's summary, and the line that names the broken import or
+	// the syntax error is here.
+	BuildLogs string `json:"buildLogs" api:"nullable"`
 	// Size of the built bundle in bytes. Null until the build finishes.
 	BundleBytes int64     `json:"bundleBytes" api:"nullable"`
 	DeployedAt  time.Time `json:"deployedAt" api:"nullable" format:"date-time"`
@@ -487,6 +500,7 @@ type FunctionGetDeploymentResponseDeployment struct {
 		FunctionID      respjson.Field
 		Status          respjson.Field
 		Version         respjson.Field
+		BuildLogs       respjson.Field
 		BundleBytes     respjson.Field
 		DeployedAt      respjson.Field
 		ErrorMessage    respjson.Field
