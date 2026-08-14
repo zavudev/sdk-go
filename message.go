@@ -306,6 +306,17 @@ type MessageContent struct {
 	MimeType string `json:"mimeType"`
 	// Message ID to react to.
 	ReactToMessageID string `json:"reactToMessageId"`
+	// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+	// from.
+	//
+	// WhatsApp only. Present on the **first inbound message** of a conversation opened
+	// from a Meta ad or post, and on no message after it — so store it when it arrives
+	// rather than expecting it again. Organic conversations never carry it.
+	//
+	// Field names are camelCased to match the rest of this API; Meta sends them as
+	// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+	// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+	Referral MessageContentReferral `json:"referral"`
 	// Sender of the quoted message (phone number in E.164 format).
 	ReplyToFrom string `json:"replyToFrom"`
 	// Zavu message ID of the quoted message this message replies to. Present on
@@ -372,6 +383,7 @@ type MessageContent struct {
 		MediaURL                 respjson.Field
 		MimeType                 respjson.Field
 		ReactToMessageID         respjson.Field
+		Referral                 respjson.Field
 		ReplyToFrom              respjson.Field
 		ReplyToMessageID         respjson.Field
 		ReplyToMessageType       respjson.Field
@@ -447,6 +459,66 @@ const (
 	MessageContentCtaHeaderTypeVideo    MessageContentCtaHeaderType = "video"
 	MessageContentCtaHeaderTypeDocument MessageContentCtaHeaderType = "document"
 )
+
+// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+// from.
+//
+// WhatsApp only. Present on the **first inbound message** of a conversation opened
+// from a Meta ad or post, and on no message after it — so store it when it arrives
+// rather than expecting it again. Organic conversations never carry it.
+//
+// Field names are camelCased to match the rest of this API; Meta sends them as
+// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+type MessageContentReferral struct {
+	// Body copy of the ad or post.
+	Body string `json:"body"`
+	// Click-to-WhatsApp click identifier. This is the value Meta's Conversions API
+	// needs to credit a conversion back to the ad that produced the conversation.
+	// Present on `ad` sources; a `post` source has none.
+	CtwaClid string `json:"ctwaClid"`
+	// Headline of the ad or post.
+	Headline string `json:"headline"`
+	// Image of the ad. Present when `mediaType` is `image`.
+	ImageURL string `json:"imageUrl" format:"uri"`
+	// Type of media on the ad, when it had any.
+	//
+	// Any of "image", "video".
+	MediaType string `json:"mediaType"`
+	// Identifier of the ad or post that produced the click.
+	SourceID string `json:"sourceId"`
+	// Where the click came from.
+	//
+	// Any of "ad", "post".
+	SourceType string `json:"sourceType"`
+	// Meta permalink to the ad or post.
+	SourceURL string `json:"sourceUrl" format:"uri"`
+	// Thumbnail of the ad media.
+	ThumbnailURL string `json:"thumbnailUrl" format:"uri"`
+	// Video of the ad. Present when `mediaType` is `video`.
+	VideoURL string `json:"videoUrl" format:"uri"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body         respjson.Field
+		CtwaClid     respjson.Field
+		Headline     respjson.Field
+		ImageURL     respjson.Field
+		MediaType    respjson.Field
+		SourceID     respjson.Field
+		SourceType   respjson.Field
+		SourceURL    respjson.Field
+		ThumbnailURL respjson.Field
+		VideoURL     respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageContentReferral) RawJSON() string { return r.JSON.raw }
+func (r *MessageContentReferral) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type MessageContentSection struct {
 	Rows  []MessageContentSectionRow `json:"rows" api:"required"`
@@ -548,6 +620,17 @@ type MessageContentParam struct {
 	//
 	// Any of "text", "image", "video", "document".
 	CtaHeaderType MessageContentCtaHeaderType `json:"ctaHeaderType,omitzero"`
+	// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+	// from.
+	//
+	// WhatsApp only. Present on the **first inbound message** of a conversation opened
+	// from a Meta ad or post, and on no message after it — so store it when it arrives
+	// rather than expecting it again. Organic conversations never carry it.
+	//
+	// Field names are camelCased to match the rest of this API; Meta sends them as
+	// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+	// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+	Referral MessageContentReferralParam `json:"referral,omitzero"`
 	// Sections for list messages.
 	Sections []MessageContentSectionParam `json:"sections,omitzero"`
 	// Variables for dynamic button placeholders (URL buttons and OTP buttons). Keys
@@ -614,6 +697,63 @@ func (r MessageContentContactParam) MarshalJSON() (data []byte, err error) {
 }
 func (r *MessageContentContactParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+// from.
+//
+// WhatsApp only. Present on the **first inbound message** of a conversation opened
+// from a Meta ad or post, and on no message after it — so store it when it arrives
+// rather than expecting it again. Organic conversations never carry it.
+//
+// Field names are camelCased to match the rest of this API; Meta sends them as
+// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+type MessageContentReferralParam struct {
+	// Body copy of the ad or post.
+	Body param.Opt[string] `json:"body,omitzero"`
+	// Click-to-WhatsApp click identifier. This is the value Meta's Conversions API
+	// needs to credit a conversion back to the ad that produced the conversation.
+	// Present on `ad` sources; a `post` source has none.
+	CtwaClid param.Opt[string] `json:"ctwaClid,omitzero"`
+	// Headline of the ad or post.
+	Headline param.Opt[string] `json:"headline,omitzero"`
+	// Image of the ad. Present when `mediaType` is `image`.
+	ImageURL param.Opt[string] `json:"imageUrl,omitzero" format:"uri"`
+	// Identifier of the ad or post that produced the click.
+	SourceID param.Opt[string] `json:"sourceId,omitzero"`
+	// Meta permalink to the ad or post.
+	SourceURL param.Opt[string] `json:"sourceUrl,omitzero" format:"uri"`
+	// Thumbnail of the ad media.
+	ThumbnailURL param.Opt[string] `json:"thumbnailUrl,omitzero" format:"uri"`
+	// Video of the ad. Present when `mediaType` is `video`.
+	VideoURL param.Opt[string] `json:"videoUrl,omitzero" format:"uri"`
+	// Type of media on the ad, when it had any.
+	//
+	// Any of "image", "video".
+	MediaType string `json:"mediaType,omitzero"`
+	// Where the click came from.
+	//
+	// Any of "ad", "post".
+	SourceType string `json:"sourceType,omitzero"`
+	paramObj
+}
+
+func (r MessageContentReferralParam) MarshalJSON() (data []byte, err error) {
+	type shadow MessageContentReferralParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *MessageContentReferralParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[MessageContentReferralParam](
+		"mediaType", "image", "video",
+	)
+	apijson.RegisterFieldValidator[MessageContentReferralParam](
+		"sourceType", "ad", "post",
+	)
 }
 
 // The properties Rows, Title are required.
