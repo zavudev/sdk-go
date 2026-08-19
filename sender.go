@@ -30,6 +30,7 @@ type SenderService struct {
 	Options      []option.RequestOption
 	Agent        SenderAgentService
 	WhatsappSync SenderWhatsappSyncService
+	Telegram     SenderTelegramService
 }
 
 // NewSenderService generates a new service that applies the given options to each
@@ -40,6 +41,7 @@ func NewSenderService(opts ...option.RequestOption) (r SenderService) {
 	r.Options = opts
 	r.Agent = NewSenderAgentService(opts...)
 	r.WhatsappSync = NewSenderWhatsappSyncService(opts...)
+	r.Telegram = NewSenderTelegramService(opts...)
 	return
 }
 

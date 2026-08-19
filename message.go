@@ -75,6 +75,23 @@ func (r *MessageService) ListAutoPaging(ctx context.Context, query MessageListPa
 	return pagination.NewCursorAutoPager(r.List(ctx, query, opts...))
 }
 
+// List the stored file attachments for an email message and get a short-lived
+// signed `downloadUrl` for each. Works for both inbound emails (received via
+// `message.inbound`) and outbound emails you sent with attachments. Messages
+// without stored attachments (including SMS, WhatsApp, and other channels) return
+// an empty list. Each `downloadUrl` is generated fresh per request and expires —
+// fetch the file promptly and do not cache the URL.
+func (r *MessageService) ListAttachments(ctx context.Context, messageID string, opts ...option.RequestOption) (res *MessageListAttachmentsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if messageID == "" {
+		err = errors.New("missing required messageId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/messages/%s/attachments", url.PathEscape(messageID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Send an emoji reaction to an existing WhatsApp message. Reactions are only
 // supported for WhatsApp messages.
 func (r *MessageService) React(ctx context.Context, messageID string, params MessageReactParams, opts ...option.RequestOption) (res *MessageResponse, err error) {
@@ -851,6 +868,62 @@ const (
 	MessageTypeReaction           MessageType = "reaction"
 	MessageTypeTemplate           MessageType = "template"
 )
+
+type MessageListAttachmentsResponse struct {
+	Items []MessageListAttachmentsResponseItem `json:"items" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Items       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageListAttachmentsResponse) RawJSON() string { return r.JSON.raw }
+func (r *MessageListAttachmentsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A stored file attachment for an email message (inbound or outbound).
+type MessageListAttachmentsResponseItem struct {
+	ID string `json:"id" api:"required"`
+	// Content-ID for inline attachments (referenced in the HTML body as
+	// `cid:<contentId>`). Null for regular attachments.
+	ContentID string    `json:"contentId" api:"required"`
+	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
+	// Short-lived signed URL to download the attachment bytes. Freshly generated on
+	// each request and expires; do not cache it. Null if the stored file is no longer
+	// available.
+	DownloadURL string `json:"downloadUrl" api:"required" format:"uri"`
+	Filename    string `json:"filename" api:"required"`
+	// Whether the attachment is inline (embedded in the HTML body) rather than a
+	// regular attachment.
+	IsInline bool `json:"isInline" api:"required"`
+	// MIME type of the attachment.
+	MimeType string `json:"mimeType" api:"required"`
+	// Size of the attachment in bytes.
+	Size int64 `json:"size" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ContentID   respjson.Field
+		CreatedAt   respjson.Field
+		DownloadURL respjson.Field
+		Filename    respjson.Field
+		IsInline    respjson.Field
+		MimeType    respjson.Field
+		Size        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageListAttachmentsResponseItem) RawJSON() string { return r.JSON.raw }
+func (r *MessageListAttachmentsResponseItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type MessageShowTypingResponse struct {
 	Success bool `json:"success" api:"required"`
