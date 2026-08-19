@@ -107,6 +107,47 @@ func (r *SenderAgentKnowledgeBaseDocumentService) Delete(ctx context.Context, do
 	return err
 }
 
+// Get a single document from a knowledge base.
+func (r *SenderAgentKnowledgeBaseDocumentService) GetDocument(ctx context.Context, docID string, query SenderAgentKnowledgeBaseDocumentGetDocumentParams, opts ...option.RequestOption) (res *SenderAgentKnowledgeBaseDocumentGetDocumentResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if query.SenderID == "" {
+		err = errors.New("missing required senderId parameter")
+		return nil, err
+	}
+	if query.KBID == "" {
+		err = errors.New("missing required kbId parameter")
+		return nil, err
+	}
+	if docID == "" {
+		err = errors.New("missing required docId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s/documents/%s", url.PathEscape(query.SenderID), url.PathEscape(query.KBID), url.PathEscape(docID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// Update a document's title or content. Updating content reprocesses the document
+// for RAG.
+func (r *SenderAgentKnowledgeBaseDocumentService) UpdateDocument(ctx context.Context, docID string, params SenderAgentKnowledgeBaseDocumentUpdateDocumentParams, opts ...option.RequestOption) (res *SenderAgentKnowledgeBaseDocumentUpdateDocumentResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if params.SenderID == "" {
+		err = errors.New("missing required senderId parameter")
+		return nil, err
+	}
+	if params.KBID == "" {
+		err = errors.New("missing required kbId parameter")
+		return nil, err
+	}
+	if docID == "" {
+		err = errors.New("missing required docId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/senders/%s/agent/knowledge-bases/%s/documents/%s", url.PathEscape(params.SenderID), url.PathEscape(params.KBID), url.PathEscape(docID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPatch, path, params, &res, opts...)
+	return res, err
+}
+
 type SenderAgentKnowledgeBaseDocumentNewResponse struct {
 	Document AgentDocument `json:"document" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -120,6 +161,38 @@ type SenderAgentKnowledgeBaseDocumentNewResponse struct {
 // Returns the unmodified JSON received from the API
 func (r SenderAgentKnowledgeBaseDocumentNewResponse) RawJSON() string { return r.JSON.raw }
 func (r *SenderAgentKnowledgeBaseDocumentNewResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SenderAgentKnowledgeBaseDocumentGetDocumentResponse struct {
+	Document AgentDocument `json:"document" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Document    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SenderAgentKnowledgeBaseDocumentGetDocumentResponse) RawJSON() string { return r.JSON.raw }
+func (r *SenderAgentKnowledgeBaseDocumentGetDocumentResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SenderAgentKnowledgeBaseDocumentUpdateDocumentResponse struct {
+	Document AgentDocument `json:"document" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Document    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SenderAgentKnowledgeBaseDocumentUpdateDocumentResponse) RawJSON() string { return r.JSON.raw }
+func (r *SenderAgentKnowledgeBaseDocumentUpdateDocumentResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -158,4 +231,26 @@ type SenderAgentKnowledgeBaseDocumentDeleteParams struct {
 	SenderID string `path:"senderId" api:"required" json:"-"`
 	KBID     string `path:"kbId" api:"required" json:"-"`
 	paramObj
+}
+
+type SenderAgentKnowledgeBaseDocumentGetDocumentParams struct {
+	SenderID string `path:"senderId" api:"required" json:"-"`
+	KBID     string `path:"kbId" api:"required" json:"-"`
+	paramObj
+}
+
+type SenderAgentKnowledgeBaseDocumentUpdateDocumentParams struct {
+	SenderID string            `path:"senderId" api:"required" json:"-"`
+	KBID     string            `path:"kbId" api:"required" json:"-"`
+	Content  param.Opt[string] `json:"content,omitzero"`
+	Title    param.Opt[string] `json:"title,omitzero"`
+	paramObj
+}
+
+func (r SenderAgentKnowledgeBaseDocumentUpdateDocumentParams) MarshalJSON() (data []byte, err error) {
+	type shadow SenderAgentKnowledgeBaseDocumentUpdateDocumentParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SenderAgentKnowledgeBaseDocumentUpdateDocumentParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
