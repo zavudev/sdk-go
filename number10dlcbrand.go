@@ -117,11 +117,16 @@ func (r *Number10dlcBrandService) ListUseCases(ctx context.Context, opts ...opti
 }
 
 // Submit a draft brand to The Campaign Registry (TCR) for vetting. The brand must
-// be in draft status. TCR's one-time $4 brand registration fee is charged from
-// your balance at submission (passed through at cost) and refunded if the carrier
-// rejects the registration. A team that already paid this fee through the
-// compliance flow is not charged again. Campaign registration is billed separately
-// when a campaign is submitted.
+// be in draft status, and the team must have an approved Business Verification
+// (KYB) — carriers register a brand against a vetted legal entity, so submitting
+// without one returns `403` with code `kyb_required`.
+//
+// TCR's one-time $4 brand registration fee is charged from your balance at
+// submission (passed through at cost) and refunded if the carrier rejects the
+// registration. The fee is per BRAND: a team registering a second legal entity
+// pays it again. A brand already paid for through the compliance flow is not
+// charged twice. Campaign registration is billed separately when a campaign is
+// submitted.
 func (r *Number10dlcBrandService) Submit(ctx context.Context, brandID string, opts ...option.RequestOption) (res *Number10dlcBrandSubmitResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if brandID == "" {
