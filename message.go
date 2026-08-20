@@ -197,6 +197,11 @@ type Message struct {
 	// "instagram", "messenger", "voice".
 	Channel   Channel   `json:"channel" api:"required"`
 	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
+	// Who sent the message. Needed to render a thread: `status` cannot tell the two
+	// apart, because an inbound message is also stored as `delivered`.
+	//
+	// Any of "inbound", "outbound".
+	Direction MessageDirection `json:"direction" api:"required"`
 	// Type of message. Non-text types are supported by WhatsApp and Telegram (varies
 	// by type).
 	//
@@ -251,6 +256,7 @@ type Message struct {
 		ID                respjson.Field
 		Channel           respjson.Field
 		CreatedAt         respjson.Field
+		Direction         respjson.Field
 		MessageType       respjson.Field
 		Status            respjson.Field
 		To                respjson.Field
@@ -277,6 +283,15 @@ func (r Message) RawJSON() string { return r.JSON.raw }
 func (r *Message) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Who sent the message. Needed to render a thread: `status` cannot tell the two
+// apart, because an inbound message is also stored as `delivered`.
+type MessageDirection string
+
+const (
+	MessageDirectionInbound  MessageDirection = "inbound"
+	MessageDirectionOutbound MessageDirection = "outbound"
+)
 
 // Content for non-text message types (WhatsApp and Telegram).
 type MessageContent struct {
