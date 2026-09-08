@@ -13,7 +13,7 @@ import (
 	"github.com/zavudev/sdk-go/option"
 )
 
-func TestIntrospectValidateEmailWithOptionalParams(t *testing.T) {
+func TestAgentSenderConnect(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -26,10 +26,13 @@ func TestIntrospectValidateEmailWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Introspect.ValidateEmail(context.TODO(), zavudev.IntrospectValidateEmailParams{
-		Email:  zavudev.String("maria@example.com"),
-		Emails: []string{"maria@example.com", "info@deaddomain.example"},
-	})
+	_, err := client.Agents.Senders.Connect(
+		context.TODO(),
+		"agentId",
+		zavudev.AgentSenderConnectParams{
+			SenderID: "senderId",
+		},
+	)
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {
@@ -39,7 +42,7 @@ func TestIntrospectValidateEmailWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestIntrospectValidatePhone(t *testing.T) {
+func TestAgentSenderDisconnect(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -52,9 +55,13 @@ func TestIntrospectValidatePhone(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Introspect.ValidatePhone(context.TODO(), zavudev.IntrospectValidatePhoneParams{
-		PhoneNumber: "+56912345678",
-	})
+	err := client.Agents.Senders.Disconnect(
+		context.TODO(),
+		"senderId",
+		zavudev.AgentSenderDisconnectParams{
+			AgentID: "agentId",
+		},
+	)
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

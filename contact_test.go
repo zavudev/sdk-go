@@ -89,6 +89,7 @@ func TestContactUpdateWithOptionalParams(t *testing.T) {
 		"contactId",
 		zavudev.ContactUpdateParams{
 			DefaultChannel: zavudev.ContactUpdateParamsDefaultChannelSMS,
+			DisplayName:    zavudev.String("John Doe"),
 			Metadata: map[string]string{
 				"foo": "string",
 			},
@@ -120,6 +121,8 @@ func TestContactListWithOptionalParams(t *testing.T) {
 		Cursor:      zavudev.String("cursor"),
 		Limit:       zavudev.Int(100),
 		PhoneNumber: zavudev.String("phoneNumber"),
+		Search:      zavudev.String("search"),
+		Tag:         []string{"string"},
 	})
 	if err != nil {
 		var apierr *zavudev.Error
@@ -144,29 +147,6 @@ func TestContactDelete(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	err := client.Contacts.Delete(context.TODO(), "contactId")
-	if err != nil {
-		var apierr *zavudev.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestContactDismissMergeSuggestion(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := zavudev.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	err := client.Contacts.DismissMergeSuggestion(context.TODO(), "contactId")
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

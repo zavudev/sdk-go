@@ -75,6 +75,23 @@ func (r *MessageService) ListAutoPaging(ctx context.Context, query MessageListPa
 	return pagination.NewCursorAutoPager(r.List(ctx, query, opts...))
 }
 
+// List the stored file attachments for an email message and get a short-lived
+// signed `downloadUrl` for each. Works for both inbound emails (received via
+// `message.inbound`) and outbound emails you sent with attachments. Messages
+// without stored attachments (including SMS, WhatsApp, and other channels) return
+// an empty list. Each `downloadUrl` is generated fresh per request and expires —
+// fetch the file promptly and do not cache the URL.
+func (r *MessageService) ListAttachments(ctx context.Context, messageID string, opts ...option.RequestOption) (res *MessageListAttachmentsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if messageID == "" {
+		err = errors.New("missing required messageId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/messages/%s/attachments", url.PathEscape(messageID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Send an emoji reaction to an existing WhatsApp message. Reactions are only
 // supported for WhatsApp messages.
 func (r *MessageService) React(ctx context.Context, messageID string, params MessageReactParams, opts ...option.RequestOption) (res *MessageResponse, err error) {
@@ -117,6 +134,36 @@ func (r *MessageService) React(ctx context.Context, messageID string, params Mes
 //     teams start with $2 of credit and additionally cap at 3,000 emails/month and
 //     100/day. Teams on earlier plans keep their original email quotas instead
 //   - SMS and voice are billed per message from your balance on every plan
+//
+// **Account verification and daily limits:**
+//
+//   - A brand-new account can send on every channel immediately, but `sms`,
+//     `sms_oneway` and `voice` reach only the phone numbers the project has
+//     verified. Sending elsewhere returns `403` with code
+//     `destination_not_verified`; `details.verifiedNumbers` lists the numbers that
+//     are reachable. A number is verified from the dashboard's Sandbox screen:
+//     generate a code and send the pre-filled WhatsApp message from that phone to
+//     Zavu's sandbox number. One verification covers WhatsApp, SMS and calls, up to
+//     5 numbers per project. To send to any destination, do any one of these: verify
+//     your identity, add a payment method, settle a deposit, or subscribe to a paid
+//     plan. Business verification (KYB) is never required to send
+//   - Daily ceilings apply per channel group and rise with verification. An account
+//     that has verified nothing: 25/day across `sms` + `sms_oneway`, 5/day for
+//     `voice`, 100/day across WhatsApp, Telegram, Instagram and Messenger combined.
+//     Past that floor: 200/day for SMS, or 10,000/day once identity or business
+//     verification is approved (or a higher limit agreed for your account); 50/day
+//     voice and 250/day conversational on Free. **Paid plans have no voice or
+//     conversational daily ceiling.** Over a ceiling, sends return `429` with code
+//     `daily_limit_exceeded` and `details.limit`; the count resets at 00:00 UTC
+//   - The daily ceiling never reduces the monthly allowance: 100/day on the
+//     conversational group still reaches the 2,000 monthly A2P messages Free
+//     includes
+//   - Email needs no account verification here: a sender with a verified domain
+//     sends from day one, within the plan quota (100/day and 3,000/month on Free).
+//     Over the daily quota it returns `429` with code `daily_limit_exceeded`. Email
+//     broadcasts are the exception: they need the account past the unverified level,
+//     see `POST /v1/broadcasts/{broadcastId}/send`
+//   - Full reference: https://docs.zavu.dev/concepts/sending-limits
 //
 // **Email recipient pre-flight:** Email messages are validated automatically
 // before dispatch. Sends that would be a guaranteed hard bounce are failed instead
@@ -180,6 +227,11 @@ type Message struct {
 	// "instagram", "messenger", "voice".
 	Channel   Channel   `json:"channel" api:"required"`
 	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
+	// Who sent the message. Needed to render a thread: `status` cannot tell the two
+	// apart, because an inbound message is also stored as `delivered`.
+	//
+	// Any of "inbound", "outbound".
+	Direction MessageDirection `json:"direction" api:"required"`
 	// Type of message. Non-text types are supported by WhatsApp and Telegram (varies
 	// by type).
 	//
@@ -234,6 +286,7 @@ type Message struct {
 		ID                respjson.Field
 		Channel           respjson.Field
 		CreatedAt         respjson.Field
+		Direction         respjson.Field
 		MessageType       respjson.Field
 		Status            respjson.Field
 		To                respjson.Field
@@ -260,6 +313,15 @@ func (r Message) RawJSON() string { return r.JSON.raw }
 func (r *Message) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Who sent the message. Needed to render a thread: `status` cannot tell the two
+// apart, because an inbound message is also stored as `delivered`.
+type MessageDirection string
+
+const (
+	MessageDirectionInbound  MessageDirection = "inbound"
+	MessageDirectionOutbound MessageDirection = "outbound"
+)
 
 // Content for non-text message types (WhatsApp and Telegram).
 type MessageContent struct {
@@ -306,6 +368,17 @@ type MessageContent struct {
 	MimeType string `json:"mimeType"`
 	// Message ID to react to.
 	ReactToMessageID string `json:"reactToMessageId"`
+	// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+	// from.
+	//
+	// WhatsApp only. Present on the **first inbound message** of a conversation opened
+	// from a Meta ad or post, and on no message after it — so store it when it arrives
+	// rather than expecting it again. Organic conversations never carry it.
+	//
+	// Field names are camelCased to match the rest of this API; Meta sends them as
+	// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+	// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+	Referral MessageContentReferral `json:"referral"`
 	// Sender of the quoted message (phone number in E.164 format).
 	ReplyToFrom string `json:"replyToFrom"`
 	// Zavu message ID of the quoted message this message replies to. Present on
@@ -372,6 +445,7 @@ type MessageContent struct {
 		MediaURL                 respjson.Field
 		MimeType                 respjson.Field
 		ReactToMessageID         respjson.Field
+		Referral                 respjson.Field
 		ReplyToFrom              respjson.Field
 		ReplyToMessageID         respjson.Field
 		ReplyToMessageType       respjson.Field
@@ -447,6 +521,66 @@ const (
 	MessageContentCtaHeaderTypeVideo    MessageContentCtaHeaderType = "video"
 	MessageContentCtaHeaderTypeDocument MessageContentCtaHeaderType = "document"
 )
+
+// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+// from.
+//
+// WhatsApp only. Present on the **first inbound message** of a conversation opened
+// from a Meta ad or post, and on no message after it — so store it when it arrives
+// rather than expecting it again. Organic conversations never carry it.
+//
+// Field names are camelCased to match the rest of this API; Meta sends them as
+// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+type MessageContentReferral struct {
+	// Body copy of the ad or post.
+	Body string `json:"body"`
+	// Click-to-WhatsApp click identifier. This is the value Meta's Conversions API
+	// needs to credit a conversion back to the ad that produced the conversation.
+	// Present on `ad` sources; a `post` source has none.
+	CtwaClid string `json:"ctwaClid"`
+	// Headline of the ad or post.
+	Headline string `json:"headline"`
+	// Image of the ad. Present when `mediaType` is `image`.
+	ImageURL string `json:"imageUrl" format:"uri"`
+	// Type of media on the ad, when it had any.
+	//
+	// Any of "image", "video".
+	MediaType string `json:"mediaType"`
+	// Identifier of the ad or post that produced the click.
+	SourceID string `json:"sourceId"`
+	// Where the click came from.
+	//
+	// Any of "ad", "post".
+	SourceType string `json:"sourceType"`
+	// Meta permalink to the ad or post.
+	SourceURL string `json:"sourceUrl" format:"uri"`
+	// Thumbnail of the ad media.
+	ThumbnailURL string `json:"thumbnailUrl" format:"uri"`
+	// Video of the ad. Present when `mediaType` is `video`.
+	VideoURL string `json:"videoUrl" format:"uri"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body         respjson.Field
+		CtwaClid     respjson.Field
+		Headline     respjson.Field
+		ImageURL     respjson.Field
+		MediaType    respjson.Field
+		SourceID     respjson.Field
+		SourceType   respjson.Field
+		SourceURL    respjson.Field
+		ThumbnailURL respjson.Field
+		VideoURL     respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageContentReferral) RawJSON() string { return r.JSON.raw }
+func (r *MessageContentReferral) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type MessageContentSection struct {
 	Rows  []MessageContentSectionRow `json:"rows" api:"required"`
@@ -548,6 +682,17 @@ type MessageContentParam struct {
 	//
 	// Any of "text", "image", "video", "document".
 	CtaHeaderType MessageContentCtaHeaderType `json:"ctaHeaderType,omitzero"`
+	// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+	// from.
+	//
+	// WhatsApp only. Present on the **first inbound message** of a conversation opened
+	// from a Meta ad or post, and on no message after it — so store it when it arrives
+	// rather than expecting it again. Organic conversations never carry it.
+	//
+	// Field names are camelCased to match the rest of this API; Meta sends them as
+	// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+	// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+	Referral MessageContentReferralParam `json:"referral,omitzero"`
 	// Sections for list messages.
 	Sections []MessageContentSectionParam `json:"sections,omitzero"`
 	// Variables for dynamic button placeholders (URL buttons and OTP buttons). Keys
@@ -614,6 +759,63 @@ func (r MessageContentContactParam) MarshalJSON() (data []byte, err error) {
 }
 func (r *MessageContentContactParam) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+// Click-to-WhatsApp (CTWA) ad attribution: where an inbound conversation came
+// from.
+//
+// WhatsApp only. Present on the **first inbound message** of a conversation opened
+// from a Meta ad or post, and on no message after it — so store it when it arrives
+// rather than expecting it again. Organic conversations never carry it.
+//
+// Field names are camelCased to match the rest of this API; Meta sends them as
+// snake_case (`ctwa_clid`, `source_id`, ...). Fields that do not apply are
+// omitted: a `post` source has no click id, and an image ad has no `videoUrl`.
+type MessageContentReferralParam struct {
+	// Body copy of the ad or post.
+	Body param.Opt[string] `json:"body,omitzero"`
+	// Click-to-WhatsApp click identifier. This is the value Meta's Conversions API
+	// needs to credit a conversion back to the ad that produced the conversation.
+	// Present on `ad` sources; a `post` source has none.
+	CtwaClid param.Opt[string] `json:"ctwaClid,omitzero"`
+	// Headline of the ad or post.
+	Headline param.Opt[string] `json:"headline,omitzero"`
+	// Image of the ad. Present when `mediaType` is `image`.
+	ImageURL param.Opt[string] `json:"imageUrl,omitzero" format:"uri"`
+	// Identifier of the ad or post that produced the click.
+	SourceID param.Opt[string] `json:"sourceId,omitzero"`
+	// Meta permalink to the ad or post.
+	SourceURL param.Opt[string] `json:"sourceUrl,omitzero" format:"uri"`
+	// Thumbnail of the ad media.
+	ThumbnailURL param.Opt[string] `json:"thumbnailUrl,omitzero" format:"uri"`
+	// Video of the ad. Present when `mediaType` is `video`.
+	VideoURL param.Opt[string] `json:"videoUrl,omitzero" format:"uri"`
+	// Type of media on the ad, when it had any.
+	//
+	// Any of "image", "video".
+	MediaType string `json:"mediaType,omitzero"`
+	// Where the click came from.
+	//
+	// Any of "ad", "post".
+	SourceType string `json:"sourceType,omitzero"`
+	paramObj
+}
+
+func (r MessageContentReferralParam) MarshalJSON() (data []byte, err error) {
+	type shadow MessageContentReferralParam
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *MessageContentReferralParam) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[MessageContentReferralParam](
+		"mediaType", "image", "video",
+	)
+	apijson.RegisterFieldValidator[MessageContentReferralParam](
+		"sourceType", "ad", "post",
+	)
 }
 
 // The properties Rows, Title are required.
@@ -711,6 +913,62 @@ const (
 	MessageTypeReaction           MessageType = "reaction"
 	MessageTypeTemplate           MessageType = "template"
 )
+
+type MessageListAttachmentsResponse struct {
+	Items []MessageListAttachmentsResponseItem `json:"items" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Items       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageListAttachmentsResponse) RawJSON() string { return r.JSON.raw }
+func (r *MessageListAttachmentsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A stored file attachment for an email message (inbound or outbound).
+type MessageListAttachmentsResponseItem struct {
+	ID string `json:"id" api:"required"`
+	// Content-ID for inline attachments (referenced in the HTML body as
+	// `cid:<contentId>`). Null for regular attachments.
+	ContentID string    `json:"contentId" api:"required"`
+	CreatedAt time.Time `json:"createdAt" api:"required" format:"date-time"`
+	// Short-lived signed URL to download the attachment bytes. Freshly generated on
+	// each request and expires; do not cache it. Null if the stored file is no longer
+	// available.
+	DownloadURL string `json:"downloadUrl" api:"required" format:"uri"`
+	Filename    string `json:"filename" api:"required"`
+	// Whether the attachment is inline (embedded in the HTML body) rather than a
+	// regular attachment.
+	IsInline bool `json:"isInline" api:"required"`
+	// MIME type of the attachment.
+	MimeType string `json:"mimeType" api:"required"`
+	// Size of the attachment in bytes.
+	Size int64 `json:"size" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ContentID   respjson.Field
+		CreatedAt   respjson.Field
+		DownloadURL respjson.Field
+		Filename    respjson.Field
+		IsInline    respjson.Field
+		MimeType    respjson.Field
+		Size        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MessageListAttachmentsResponseItem) RawJSON() string { return r.JSON.raw }
+func (r *MessageListAttachmentsResponseItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type MessageShowTypingResponse struct {
 	Success bool `json:"success" api:"required"`

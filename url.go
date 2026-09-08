@@ -39,6 +39,19 @@ func NewURLService(opts ...option.RequestOption) (r URLService) {
 	return
 }
 
+// Request manual review of a rejected URL. Only URLs in 'rejected' status can be
+// escalated; the status then moves to 'escalated'.
+func (r *URLService) Escalate(ctx context.Context, urlID string, body URLEscalateParams, opts ...option.RequestOption) (res *URLEscalateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if urlID == "" {
+		err = errors.New("missing required urlId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/urls/%s/escalate", url.PathEscape(urlID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // List URLs that have been verified for this project.
 func (r *URLService) ListVerified(ctx context.Context, query URLListVerifiedParams, opts ...option.RequestOption) (res *pagination.Cursor[VerifiedURL], err error) {
 	var raw *http.Response
@@ -143,6 +156,24 @@ const (
 	VerifiedURLApprovalTypeAutoWebRisk VerifiedURLApprovalType = "auto_web_risk"
 )
 
+type URLEscalateResponse struct {
+	Message string      `json:"message" api:"required"`
+	URL     VerifiedURL `json:"url" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Message     respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r URLEscalateResponse) RawJSON() string { return r.JSON.raw }
+func (r *URLEscalateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type URLGetDetailsResponse struct {
 	URL VerifiedURL `json:"url" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -172,6 +203,20 @@ type URLSubmitForVerificationResponse struct {
 // Returns the unmodified JSON received from the API
 func (r URLSubmitForVerificationResponse) RawJSON() string { return r.JSON.raw }
 func (r *URLSubmitForVerificationResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type URLEscalateParams struct {
+	// Why the URL should be reviewed manually.
+	Reason string `json:"reason" api:"required"`
+	paramObj
+}
+
+func (r URLEscalateParams) MarshalJSON() (data []byte, err error) {
+	type shadow URLEscalateParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *URLEscalateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
