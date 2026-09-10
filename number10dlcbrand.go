@@ -171,7 +171,18 @@ type TenDlcBrand struct {
 	State      string `json:"state" api:"required"`
 	// Status of a 10DLC brand registration.
 	//
-	// Any of "draft", "pending", "verified", "rejected".
+	//   - `draft`: created, not yet submitted to the carrier.
+	//   - `pending`: submitted, awaiting the carrier's answer.
+	//   - `verified`: the carrier registered the brand AND verified the business behind
+	//     it.
+	//   - `unverified`: the carrier registered the brand but did not verify the business
+	//     — the registration exists, the identity check did not pass or has not been
+	//     resolved. Campaigns are allowed, with lower daily limits. Read
+	//     `identityStatus` for the carrier's own wording.
+	//   - `rejected`: refused by the carrier.
+	//   - `failed`: the registration never reached the carrier; the fee is refunded.
+	//
+	// Any of "draft", "pending", "verified", "unverified", "rejected", "failed".
 	Status    TenDlcBrandStatus `json:"status" api:"required"`
 	Street    string            `json:"street" api:"required"`
 	UpdatedAt time.Time         `json:"updatedAt" api:"required" format:"date-time"`
@@ -185,14 +196,19 @@ type TenDlcBrand struct {
 	// Employer Identification Number (EIN).
 	Ein string `json:"ein" api:"nullable"`
 	// Reason for rejection, if applicable.
-	FailureReason string    `json:"failureReason" api:"nullable"`
-	FirstName     string    `json:"firstName" api:"nullable"`
-	LastName      string    `json:"lastName" api:"nullable"`
-	StockExchange string    `json:"stockExchange" api:"nullable"`
-	StockSymbol   string    `json:"stockSymbol" api:"nullable"`
-	SubmittedAt   time.Time `json:"submittedAt" api:"nullable" format:"date-time"`
-	VerifiedAt    time.Time `json:"verifiedAt" api:"nullable" format:"date-time"`
-	Website       string    `json:"website" api:"nullable" format:"uri"`
+	FailureReason string `json:"failureReason" api:"nullable"`
+	FirstName     string `json:"firstName" api:"nullable"`
+	// The carrier's raw identity verdict on the business, as the carrier spells it
+	// (`VERIFIED`, `VETTED_VERIFIED`, `SELF_DECLARED`, `UNVERIFIED`). Null while the
+	// identity has not been resolved — which is not the same as verified, and is why
+	// such a brand reports `status: unverified`.
+	IdentityStatus string    `json:"identityStatus" api:"nullable"`
+	LastName       string    `json:"lastName" api:"nullable"`
+	StockExchange  string    `json:"stockExchange" api:"nullable"`
+	StockSymbol    string    `json:"stockSymbol" api:"nullable"`
+	SubmittedAt    time.Time `json:"submittedAt" api:"nullable" format:"date-time"`
+	VerifiedAt     time.Time `json:"verifiedAt" api:"nullable" format:"date-time"`
+	Website        string    `json:"website" api:"nullable" format:"uri"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                respjson.Field
@@ -215,6 +231,7 @@ type TenDlcBrand struct {
 		Ein               respjson.Field
 		FailureReason     respjson.Field
 		FirstName         respjson.Field
+		IdentityStatus    respjson.Field
 		LastName          respjson.Field
 		StockExchange     respjson.Field
 		StockSymbol       respjson.Field
@@ -244,13 +261,26 @@ const (
 )
 
 // Status of a 10DLC brand registration.
+//
+//   - `draft`: created, not yet submitted to the carrier.
+//   - `pending`: submitted, awaiting the carrier's answer.
+//   - `verified`: the carrier registered the brand AND verified the business behind
+//     it.
+//   - `unverified`: the carrier registered the brand but did not verify the business
+//     — the registration exists, the identity check did not pass or has not been
+//     resolved. Campaigns are allowed, with lower daily limits. Read
+//     `identityStatus` for the carrier's own wording.
+//   - `rejected`: refused by the carrier.
+//   - `failed`: the registration never reached the carrier; the fee is refunded.
 type TenDlcBrandStatus string
 
 const (
-	TenDlcBrandStatusDraft    TenDlcBrandStatus = "draft"
-	TenDlcBrandStatusPending  TenDlcBrandStatus = "pending"
-	TenDlcBrandStatusVerified TenDlcBrandStatus = "verified"
-	TenDlcBrandStatusRejected TenDlcBrandStatus = "rejected"
+	TenDlcBrandStatusDraft      TenDlcBrandStatus = "draft"
+	TenDlcBrandStatusPending    TenDlcBrandStatus = "pending"
+	TenDlcBrandStatusVerified   TenDlcBrandStatus = "verified"
+	TenDlcBrandStatusUnverified TenDlcBrandStatus = "unverified"
+	TenDlcBrandStatusRejected   TenDlcBrandStatus = "rejected"
+	TenDlcBrandStatusFailed     TenDlcBrandStatus = "failed"
 )
 
 type Number10dlcBrandNewResponse struct {
