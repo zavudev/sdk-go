@@ -110,13 +110,14 @@ func (r *Number10dlcCampaignService) Delete(ctx context.Context, campaignID stri
 	return err
 }
 
-// Submit a draft campaign for carrier review. The campaign must be in draft status
-// and its brand must be verified. TCR's one-time registration fee is charged from
-// your balance at submission ($15 for standard use cases, $2 for LOW_VOLUME),
-// passed through at cost and refunded if the carrier rejects it. Once approved,
-// the campaign's monthly TCR fee ($10 standard, $2 LOW_VOLUME) is charged from
-// your balance while the campaign is active — see registrationCostCents and
-// monthlyFeeCents on the campaign object.
+// The team must have an approved Business Verification (KYB): submitting without
+// one returns `403` with code `kyb_required`. Submit a draft campaign for carrier
+// review. The campaign must be in draft status and its brand must be verified.
+// TCR's one-time registration fee is charged from your balance at submission ($15
+// for standard use cases, $2 for LOW_VOLUME), passed through at cost and refunded
+// if the carrier rejects it. Once approved, the campaign's monthly TCR fee ($10
+// standard, $2 LOW_VOLUME) is charged from your balance while the campaign is
+// active — see registrationCostCents and monthlyFeeCents on the campaign object.
 func (r *Number10dlcCampaignService) Submit(ctx context.Context, campaignID string, opts ...option.RequestOption) (res *Number10dlcCampaignSubmitResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if campaignID == "" {

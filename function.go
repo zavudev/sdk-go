@@ -26,8 +26,10 @@ import (
 // automatically. You should not instantiate this service directly, and instead use
 // the [NewFunctionService] method instead.
 type FunctionService struct {
-	Options []option.RequestOption
-	Secrets FunctionSecretService
+	Options  []option.RequestOption
+	Secrets  FunctionSecretService
+	Triggers FunctionTriggerService
+	GitLink  FunctionGitLinkService
 }
 
 // NewFunctionService generates a new service that applies the given options to
@@ -37,6 +39,8 @@ func NewFunctionService(opts ...option.RequestOption) (r FunctionService) {
 	r = FunctionService{}
 	r.Options = opts
 	r.Secrets = NewFunctionSecretService(opts...)
+	r.Triggers = NewFunctionTriggerService(opts...)
+	r.GitLink = NewFunctionGitLinkService(opts...)
 	return
 }
 
@@ -119,6 +123,45 @@ func (r *FunctionService) GetDeployment(ctx context.Context, deploymentID string
 	}
 	path := fmt.Sprintf("v1/functions/deployments/%s", url.PathEscape(deploymentID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// List a function's deployment history, newest first. Source code is omitted;
+// fetch a single deployment via GET /v1/functions/deployments/{deploymentId} for
+// full details.
+func (r *FunctionService) ListDeployments(ctx context.Context, functionID string, query FunctionListDeploymentsParams, opts ...option.RequestOption) (res *FunctionListDeploymentsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if functionID == "" {
+		err = errors.New("missing required functionId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/functions/%s/deployments", url.PathEscape(functionID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// List the event types a function trigger can subscribe to. Includes the special
+// type `cron`, which fires on a schedule (see POST
+// /v1/functions/{functionId}/triggers) rather than on a messaging event.
+func (r *FunctionService) ListEventTypes(ctx context.Context, opts ...option.RequestOption) (res *FunctionListEventTypesResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/functions/event-types"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// Re-deploy a previous version by copying its source, dependencies, and runtime
+// pin onto the function's draft, then deploying. Returns immediately with a
+// deployment ID — poll GET /v1/functions/deployments/{deploymentId} until status
+// is active or failed. Secrets are not rolled back.
+func (r *FunctionService) RollbackDeployment(ctx context.Context, functionID string, body FunctionRollbackDeploymentParams, opts ...option.RequestOption) (res *FunctionRollbackDeploymentResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if functionID == "" {
+		err = errors.New("missing required functionId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/functions/%s/rollback", url.PathEscape(functionID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -516,6 +559,140 @@ func (r *FunctionGetDeploymentResponseDeployment) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type FunctionListDeploymentsResponse struct {
+	Deployments []FunctionListDeploymentsResponseDeployment `json:"deployments" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Deployments respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FunctionListDeploymentsResponse) RawJSON() string { return r.JSON.raw }
+func (r *FunctionListDeploymentsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FunctionListDeploymentsResponseDeployment struct {
+	ID              string    `json:"id"`
+	BundleSizeBytes int64     `json:"bundleSizeBytes" api:"nullable"`
+	CreatedAt       time.Time `json:"createdAt" format:"date-time"`
+	DeployedAt      time.Time `json:"deployedAt" api:"nullable" format:"date-time"`
+	ErrorMessage    string    `json:"errorMessage" api:"nullable"`
+	IsActive        bool      `json:"isActive"`
+	// Stage of a function deployment.
+	//
+	// Any of "pending", "bundling", "uploading", "publishing", "active", "failed",
+	// "superseded".
+	Status  string `json:"status"`
+	Version int64  `json:"version"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		BundleSizeBytes respjson.Field
+		CreatedAt       respjson.Field
+		DeployedAt      respjson.Field
+		ErrorMessage    respjson.Field
+		IsActive        respjson.Field
+		Status          respjson.Field
+		Version         respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FunctionListDeploymentsResponseDeployment) RawJSON() string { return r.JSON.raw }
+func (r *FunctionListDeploymentsResponseDeployment) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FunctionListEventTypesResponse struct {
+	Events []string `json:"events" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Events      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FunctionListEventTypesResponse) RawJSON() string { return r.JSON.raw }
+func (r *FunctionListEventTypesResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FunctionRollbackDeploymentResponse struct {
+	Deployment FunctionRollbackDeploymentResponseDeployment `json:"deployment" api:"required"`
+	// The draft that was replaced, so a UI can offer to restore it.
+	PreviousDraft       any   `json:"previousDraft" api:"nullable"`
+	RolledBackToVersion int64 `json:"rolledBackToVersion"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Deployment          respjson.Field
+		PreviousDraft       respjson.Field
+		RolledBackToVersion respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FunctionRollbackDeploymentResponse) RawJSON() string { return r.JSON.raw }
+func (r *FunctionRollbackDeploymentResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FunctionRollbackDeploymentResponseDeployment struct {
+	ID         string    `json:"id" api:"required"`
+	CreatedAt  time.Time `json:"createdAt" api:"required" format:"date-time"`
+	FunctionID string    `json:"functionId" api:"required"`
+	// Stage of a function deployment.
+	//
+	// Any of "pending", "bundling", "uploading", "publishing", "active", "failed",
+	// "superseded".
+	Status string `json:"status" api:"required"`
+	// Monotonically increasing deployment version, starting at 1.
+	Version int64 `json:"version" api:"required"`
+	// What the build printed: dependency installation, the bundler's output, and the
+	// compiler's message when it failed. Returned when fetching a single deployment,
+	// omitted from the list. Read this first when a deploy fails — `errorMessage` is
+	// often the outer wrapper's summary, and the line that names the broken import or
+	// the syntax error is here.
+	BuildLogs string `json:"buildLogs" api:"nullable"`
+	// Size of the built bundle in bytes. Null until the build finishes.
+	BundleBytes int64     `json:"bundleBytes" api:"nullable"`
+	DeployedAt  time.Time `json:"deployedAt" api:"nullable" format:"date-time"`
+	// Failure reason when status is 'failed'.
+	ErrorMessage string `json:"errorMessage" api:"nullable"`
+	// Total size of the deployed source tree in bytes.
+	SourceCodeBytes int64 `json:"sourceCodeBytes" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		CreatedAt       respjson.Field
+		FunctionID      respjson.Field
+		Status          respjson.Field
+		Version         respjson.Field
+		BuildLogs       respjson.Field
+		BundleBytes     respjson.Field
+		DeployedAt      respjson.Field
+		ErrorMessage    respjson.Field
+		SourceCodeBytes respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FunctionRollbackDeploymentResponseDeployment) RawJSON() string { return r.JSON.raw }
+func (r *FunctionRollbackDeploymentResponseDeployment) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type FunctionTailLogsResponse struct {
 	Events []FunctionTailLogsResponseEvent `json:"events" api:"required"`
 	// Pass to the next request to fetch the following page of logs.
@@ -665,6 +842,34 @@ func (r FunctionDeployParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *FunctionDeployParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type FunctionListDeploymentsParams struct {
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [FunctionListDeploymentsParams]'s query parameters as
+// `url.Values`.
+func (r FunctionListDeploymentsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type FunctionRollbackDeploymentParams struct {
+	// ID of the deployment to roll back to.
+	DeploymentID string `json:"deploymentId" api:"required"`
+	paramObj
+}
+
+func (r FunctionRollbackDeploymentParams) MarshalJSON() (data []byte, err error) {
+	type shadow FunctionRollbackDeploymentParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *FunctionRollbackDeploymentParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

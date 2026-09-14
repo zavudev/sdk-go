@@ -34,6 +34,11 @@ type Client struct {
 	Number10dlc         Number10dlcService
 	Me                  MeService
 	Functions           FunctionService
+	Conversations       ConversationService
+	Calls               CallService
+	AgentTemplates      AgentTemplateService
+	EmailDomains        EmailDomainService
+	Agents              AgentService
 }
 
 // DefaultClientOptions read from the environment (ZAVUDEV_API_KEY,
@@ -82,6 +87,11 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Number10dlc = NewNumber10dlcService(opts...)
 	r.Me = NewMeService(opts...)
 	r.Functions = NewFunctionService(opts...)
+	r.Conversations = NewConversationService(opts...)
+	r.Calls = NewCallService(opts...)
+	r.AgentTemplates = NewAgentTemplateService(opts...)
+	r.EmailDomains = NewEmailDomainService(opts...)
+	r.Agents = NewAgentService(opts...)
 
 	return
 }

@@ -29,6 +29,7 @@ import (
 // the [NewSenderAgentToolService] method instead.
 type SenderAgentToolService struct {
 	Options []option.RequestOption
+	Webhook SenderAgentToolWebhookService
 }
 
 // NewSenderAgentToolService generates a new service that applies the given options
@@ -37,6 +38,7 @@ type SenderAgentToolService struct {
 func NewSenderAgentToolService(opts ...option.RequestOption) (r SenderAgentToolService) {
 	r = SenderAgentToolService{}
 	r.Options = opts
+	r.Webhook = NewSenderAgentToolWebhookService(opts...)
 	return
 }
 
@@ -126,6 +128,24 @@ func (r *SenderAgentToolService) Delete(ctx context.Context, toolID string, body
 	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s", url.PathEscape(body.SenderID), url.PathEscape(toolID))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
 	return err
+}
+
+// Recent runs of this tool triggered from the test endpoint, newest first. Covers
+// manual tests only: a tool called by an agent during a real conversation is not
+// recorded here.
+func (r *SenderAgentToolService) ListTestRuns(ctx context.Context, toolID string, params SenderAgentToolListTestRunsParams, opts ...option.RequestOption) (res *SenderAgentToolListTestRunsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if params.SenderID == "" {
+		err = errors.New("missing required senderId parameter")
+		return nil, err
+	}
+	if toolID == "" {
+		err = errors.New("missing required toolId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/senders/%s/agent/tools/%s/test-runs", url.PathEscape(params.SenderID), url.PathEscape(toolID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, params, &res, opts...)
+	return res, err
 }
 
 // Run a tool with the parameters you supply and return what it answered.
@@ -329,6 +349,63 @@ func (r *SenderAgentToolUpdateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SenderAgentToolListTestRunsResponse struct {
+	Items []SenderAgentToolListTestRunsResponseItem `json:"items" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Items       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SenderAgentToolListTestRunsResponse) RawJSON() string { return r.JSON.raw }
+func (r *SenderAgentToolListTestRunsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// One run of a tool triggered from the test endpoint. Recorded so a test is
+// verifiable after the fact rather than only visible in the response.
+type SenderAgentToolListTestRunsResponseItem struct {
+	ID         string    `json:"id" api:"required"`
+	CreatedAt  time.Time `json:"createdAt" api:"required" format:"date-time"`
+	DurationMs int64     `json:"durationMs" api:"required"`
+	// Whether the tool returned without error. A tool that answered with a non-2xx
+	// status is a failed run, not an error of this endpoint.
+	Success bool   `json:"success" api:"required"`
+	ToolID  string `json:"toolId" api:"required"`
+	// Why the run failed, when it did.
+	Error string `json:"error" api:"nullable"`
+	// The parameters the tool was called with.
+	Params map[string]any `json:"params"`
+	// The tool's response body, truncated.
+	Response string `json:"response" api:"nullable"`
+	// HTTP status the tool's webhook returned. Absent for tools that do not go over
+	// HTTP.
+	StatusCode int64 `json:"statusCode" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CreatedAt   respjson.Field
+		DurationMs  respjson.Field
+		Success     respjson.Field
+		ToolID      respjson.Field
+		Error       respjson.Field
+		Params      respjson.Field
+		Response    respjson.Field
+		StatusCode  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SenderAgentToolListTestRunsResponseItem) RawJSON() string { return r.JSON.raw }
+func (r *SenderAgentToolListTestRunsResponseItem) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SenderAgentToolTestResponse struct {
 	// One run of a tool triggered from the test endpoint. Recorded so a test is
 	// verifiable after the fact rather than only visible in the response.
@@ -453,6 +530,21 @@ func (r SenderAgentToolListParams) URLQuery() (v url.Values, err error) {
 type SenderAgentToolDeleteParams struct {
 	SenderID string `path:"senderId" api:"required" json:"-"`
 	paramObj
+}
+
+type SenderAgentToolListTestRunsParams struct {
+	SenderID string           `path:"senderId" api:"required" json:"-"`
+	Limit    param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [SenderAgentToolListTestRunsParams]'s query parameters as
+// `url.Values`.
+func (r SenderAgentToolListTestRunsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type SenderAgentToolTestParams struct {

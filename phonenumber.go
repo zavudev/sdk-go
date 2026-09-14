@@ -272,12 +272,16 @@ const (
 	PhoneNumberStatusPending   PhoneNumberStatus = "pending"
 )
 
+// Type of phone number. `mobile` is stocked in countries where no geographic
+// (`local`) or non-geographic (`national`) inventory exists, and in several
+// markets it is the only type that can receive SMS.
 type PhoneNumberType string
 
 const (
 	PhoneNumberTypeLocal    PhoneNumberType = "local"
 	PhoneNumberTypeNational PhoneNumberType = "national"
 	PhoneNumberTypeTollFree PhoneNumberType = "tollFree"
+	PhoneNumberTypeMobile   PhoneNumberType = "mobile"
 )
 
 // A group of requirements for a specific country/phone type combination.
@@ -505,7 +509,7 @@ type PhoneNumberRequirementsParams struct {
 	CountryCode string `query:"countryCode" api:"required" json:"-"`
 	// Type of phone number (local, mobile, tollFree).
 	//
-	// Any of "local", "national", "tollFree".
+	// Any of "local", "national", "tollFree", "mobile".
 	Type PhoneNumberType `query:"type,omitzero" json:"-"`
 	paramObj
 }
@@ -531,7 +535,7 @@ type PhoneNumberSearchAvailableParams struct {
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Type of phone number to search for.
 	//
-	// Any of "local", "national", "tollFree".
+	// Any of "local", "national", "tollFree", "mobile".
 	Type PhoneNumberType `query:"type,omitzero" json:"-"`
 	paramObj
 }

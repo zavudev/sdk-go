@@ -13,7 +13,7 @@ import (
 	"github.com/zavudev/sdk-go/option"
 )
 
-func TestSenderAgentKnowledgeBaseDocumentNew(t *testing.T) {
+func TestFunctionGitLinkGet(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -26,13 +26,36 @@ func TestSenderAgentKnowledgeBaseDocumentNew(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Senders.Agent.KnowledgeBases.Documents.New(
+	_, err := client.Functions.GitLink.Get(context.TODO(), "functionId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestFunctionGitLinkUpdateWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Functions.GitLink.Update(
 		context.TODO(),
-		"kbId",
-		zavudev.SenderAgentKnowledgeBaseDocumentNewParams{
-			SenderID: "senderId",
-			Content:  "Our return policy allows returns within 30 days of purchase...",
-			Title:    "Return Policy",
+		"functionId",
+		zavudev.FunctionGitLinkUpdateParams{
+			AutoDeploy: zavudev.Bool(false),
+			Branch:     zavudev.String("branch"),
+			RootDir:    zavudev.String("rootDir"),
 		},
 	)
 	if err != nil {
@@ -44,7 +67,7 @@ func TestSenderAgentKnowledgeBaseDocumentNew(t *testing.T) {
 	}
 }
 
-func TestSenderAgentKnowledgeBaseDocumentListWithOptionalParams(t *testing.T) {
+func TestFunctionGitLinkDeployNow(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -57,13 +80,38 @@ func TestSenderAgentKnowledgeBaseDocumentListWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Senders.Agent.KnowledgeBases.Documents.List(
+	_, err := client.Functions.GitLink.DeployNow(context.TODO(), "functionId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestFunctionGitLinkLinkWithOptionalParams(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Functions.GitLink.Link(
 		context.TODO(),
-		"kbId",
-		zavudev.SenderAgentKnowledgeBaseDocumentListParams{
-			SenderID: "senderId",
-			Cursor:   zavudev.String("cursor"),
-			Limit:    zavudev.Int(100),
+		"functionId",
+		zavudev.FunctionGitLinkLinkParams{
+			Owner:      "acme",
+			Repo:       "order-bot",
+			AutoDeploy: zavudev.Bool(true),
+			Branch:     zavudev.String("main"),
+			RootDir:    zavudev.String("apps/bot"),
 		},
 	)
 	if err != nil {
@@ -75,7 +123,7 @@ func TestSenderAgentKnowledgeBaseDocumentListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestSenderAgentKnowledgeBaseDocumentDelete(t *testing.T) {
+func TestFunctionGitLinkUnlink(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -88,76 +136,7 @@ func TestSenderAgentKnowledgeBaseDocumentDelete(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	err := client.Senders.Agent.KnowledgeBases.Documents.Delete(
-		context.TODO(),
-		"docId",
-		zavudev.SenderAgentKnowledgeBaseDocumentDeleteParams{
-			SenderID: "senderId",
-			KBID:     "kbId",
-		},
-	)
-	if err != nil {
-		var apierr *zavudev.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestSenderAgentKnowledgeBaseDocumentGetDocument(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := zavudev.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Senders.Agent.KnowledgeBases.Documents.GetDocument(
-		context.TODO(),
-		"docId",
-		zavudev.SenderAgentKnowledgeBaseDocumentGetDocumentParams{
-			SenderID: "senderId",
-			KBID:     "kbId",
-		},
-	)
-	if err != nil {
-		var apierr *zavudev.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestSenderAgentKnowledgeBaseDocumentUpdateDocumentWithOptionalParams(t *testing.T) {
-	t.Skip("Mock server tests are disabled")
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := zavudev.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Senders.Agent.KnowledgeBases.Documents.UpdateDocument(
-		context.TODO(),
-		"docId",
-		zavudev.SenderAgentKnowledgeBaseDocumentUpdateDocumentParams{
-			SenderID: "senderId",
-			KBID:     "kbId",
-			Content:  zavudev.String("content"),
-			Title:    zavudev.String("title"),
-		},
-	)
+	err := client.Functions.GitLink.Unlink(context.TODO(), "functionId")
 	if err != nil {
 		var apierr *zavudev.Error
 		if errors.As(err, &apierr) {

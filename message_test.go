@@ -65,6 +65,29 @@ func TestMessageListWithOptionalParams(t *testing.T) {
 	}
 }
 
+func TestMessageListAttachments(t *testing.T) {
+	t.Skip("Mock server tests are disabled")
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := zavudev.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Messages.ListAttachments(context.TODO(), "messageId")
+	if err != nil {
+		var apierr *zavudev.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestMessageReactWithOptionalParams(t *testing.T) {
 	t.Skip("Mock server tests are disabled")
 	baseURL := "http://localhost:4010"
@@ -127,23 +150,35 @@ func TestMessageSendWithOptionalParams(t *testing.T) {
 				Name:   zavudev.String("name"),
 				Phones: []string{"string"},
 			}},
-			CtaDisplayText:           zavudev.String("See Dates"),
-			CtaHeaderMediaURL:        zavudev.String("https://example.com"),
-			CtaHeaderText:            zavudev.String("ctaHeaderText"),
-			CtaHeaderType:            zavudev.MessageContentCtaHeaderTypeText,
-			CtaURL:                   zavudev.String("https://example.com/schedule"),
-			Emoji:                    zavudev.String("emoji"),
-			Filename:                 zavudev.String("invoice.pdf"),
-			FooterText:               zavudev.String("Dates subject to change."),
-			Latitude:                 zavudev.Float(0),
-			ListButton:               zavudev.String("listButton"),
-			LocationAddress:          zavudev.String("locationAddress"),
-			LocationName:             zavudev.String("locationName"),
-			Longitude:                zavudev.Float(0),
-			MediaID:                  zavudev.String("mediaId"),
-			MediaURL:                 zavudev.String("https://example.com/image.jpg"),
-			MimeType:                 zavudev.String("image/jpeg"),
-			ReactToMessageID:         zavudev.String("reactToMessageId"),
+			CtaDisplayText:    zavudev.String("See Dates"),
+			CtaHeaderMediaURL: zavudev.String("https://example.com"),
+			CtaHeaderText:     zavudev.String("ctaHeaderText"),
+			CtaHeaderType:     zavudev.MessageContentCtaHeaderTypeText,
+			CtaURL:            zavudev.String("https://example.com/schedule"),
+			Emoji:             zavudev.String("emoji"),
+			Filename:          zavudev.String("invoice.pdf"),
+			FooterText:        zavudev.String("Dates subject to change."),
+			Latitude:          zavudev.Float(0),
+			ListButton:        zavudev.String("listButton"),
+			LocationAddress:   zavudev.String("locationAddress"),
+			LocationName:      zavudev.String("locationName"),
+			Longitude:         zavudev.Float(0),
+			MediaID:           zavudev.String("mediaId"),
+			MediaURL:          zavudev.String("https://example.com/image.jpg"),
+			MimeType:          zavudev.String("image/jpeg"),
+			ReactToMessageID:  zavudev.String("reactToMessageId"),
+			Referral: zavudev.MessageContentReferralParam{
+				Body:         zavudev.String("body"),
+				CtwaClid:     zavudev.String("ARIzZm9vYmFyY3R3YWNsaWQ"),
+				Headline:     zavudev.String("headline"),
+				ImageURL:     zavudev.String("https://example.com"),
+				MediaType:    "image",
+				SourceID:     zavudev.String("120210000000000000"),
+				SourceType:   "ad",
+				SourceURL:    zavudev.String("https://example.com"),
+				ThumbnailURL: zavudev.String("https://example.com"),
+				VideoURL:     zavudev.String("https://example.com"),
+			},
 			ReplyToFrom:              zavudev.String("replyToFrom"),
 			ReplyToMessageID:         zavudev.String("replyToMessageId"),
 			ReplyToMessageType:       zavudev.String("replyToMessageType"),

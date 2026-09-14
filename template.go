@@ -110,6 +110,34 @@ func (r *TemplateService) Submit(ctx context.Context, templateID string, body Te
 	return res, err
 }
 
+// Reconcile this project's templates against WhatsApp. Two things happen per
+// connected WhatsApp Business Account: templates that exist on Meta but not in
+// Zavu are imported (or linked to an existing template with the same name), and
+// the approval status of the templates Zavu already knows about is refreshed from
+// Meta.
+//
+// This is what to call when a template was created outside Zavu — in Meta Business
+// Manager, or by another tool — or when a `template.status_changed` webhook was
+// missed and a template is stuck in `pending`. Status changes normally arrive by
+// webhook; this endpoint is the recovery path and the only path for a template
+// Zavu never created.
+//
+// Templates that Meta reports as rejected or disabled are not imported; they are
+// counted in `skipped`. Existing local templates are matched first by Meta
+// template ID, then by name.
+//
+// By default every sender in the project with a WhatsApp Business Account is
+// synced. Pass `senderId` to sync only that sender's account. The call is
+// synchronous — it waits for Meta and returns what changed — so it can take a few
+// seconds per account. A failure on one account does not fail the request: it is
+// reported in `errors` and the remaining accounts are still synced.
+func (r *TemplateService) Sync(ctx context.Context, body TemplateSyncParams, opts ...option.RequestOption) (res *TemplateSyncResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/templates/sync"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 type Template struct {
 	ID string `json:"id" api:"required"`
 	// Default template body with variables: positional ({{1}}, {{2}}) or named
@@ -264,6 +292,41 @@ const (
 	WhatsappCategoryAuthentication WhatsappCategory = "AUTHENTICATION"
 )
 
+type TemplateSyncResponse struct {
+	// WhatsApp Business Accounts reconciled in this call.
+	AccountsSynced int64 `json:"accountsSynced" api:"required"`
+	// Problems hit while syncing. Non-empty with a 200 means part of the sync did not
+	// complete — the rest still did.
+	Errors []string `json:"errors" api:"required"`
+	// Templates that existed on Meta and were created in Zavu by this call.
+	Imported int64 `json:"imported" api:"required"`
+	// Existing Zavu templates that were matched to a Meta template by name and bound
+	// to its Meta ID.
+	Linked int64 `json:"linked" api:"required"`
+	// Meta templates left alone: already linked to a Zavu template, or
+	// rejected/disabled on Meta.
+	Skipped int64 `json:"skipped" api:"required"`
+	// Templates whose approval status changed to match Meta.
+	Updated int64 `json:"updated" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AccountsSynced respjson.Field
+		Errors         respjson.Field
+		Imported       respjson.Field
+		Linked         respjson.Field
+		Skipped        respjson.Field
+		Updated        respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TemplateSyncResponse) RawJSON() string { return r.JSON.raw }
+func (r *TemplateSyncResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type TemplateNewParams struct {
 	// Default template body. Used when no channel-specific body is set.
 	Body     string `json:"body" api:"required"`
@@ -393,5 +456,20 @@ func (r TemplateSubmitParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *TemplateSubmitParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TemplateSyncParams struct {
+	// Sync only the WhatsApp Business Account attached to this sender. If omitted,
+	// every WhatsApp sender in the project is synced.
+	SenderID param.Opt[string] `json:"senderId,omitzero"`
+	paramObj
+}
+
+func (r TemplateSyncParams) MarshalJSON() (data []byte, err error) {
+	type shadow TemplateSyncParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *TemplateSyncParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }

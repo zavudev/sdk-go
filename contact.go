@@ -114,19 +114,6 @@ func (r *ContactService) Delete(ctx context.Context, contactID string, opts ...o
 	return err
 }
 
-// Dismiss the merge suggestion for a contact.
-func (r *ContactService) DismissMergeSuggestion(ctx context.Context, contactID string, opts ...option.RequestOption) (err error) {
-	opts = slices.Concat(r.Options, opts)
-	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
-	if contactID == "" {
-		err = errors.New("missing required contactId parameter")
-		return err
-	}
-	path := fmt.Sprintf("v1/contacts/%s/merge-suggestion", url.PathEscape(contactID))
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, nil, nil, opts...)
-	return err
-}
-
 // Merge a source contact into this contact. All channels from the source contact
 // will be moved to the target contact, and the source contact will be marked as
 // merged.
@@ -178,29 +165,26 @@ type Contact struct {
 	// Primary phone number in E.164 format.
 	PrimaryPhone string `json:"primaryPhone"`
 	// Contact's WhatsApp profile name. Only available for WhatsApp contacts.
-	ProfileName string `json:"profileName" api:"nullable"`
-	// ID of a contact suggested for merging.
-	SuggestedMergeWith string    `json:"suggestedMergeWith"`
-	UpdatedAt          time.Time `json:"updatedAt" format:"date-time"`
+	ProfileName string    `json:"profileName" api:"nullable"`
+	UpdatedAt   time.Time `json:"updatedAt" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID                 respjson.Field
-		AvailableChannels  respjson.Field
-		CreatedAt          respjson.Field
-		Metadata           respjson.Field
-		Verified           respjson.Field
-		Channels           respjson.Field
-		CountryCode        respjson.Field
-		DefaultChannel     respjson.Field
-		DisplayName        respjson.Field
-		PhoneNumber        respjson.Field
-		PrimaryEmail       respjson.Field
-		PrimaryPhone       respjson.Field
-		ProfileName        respjson.Field
-		SuggestedMergeWith respjson.Field
-		UpdatedAt          respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
+		ID                respjson.Field
+		AvailableChannels respjson.Field
+		CreatedAt         respjson.Field
+		Metadata          respjson.Field
+		Verified          respjson.Field
+		Channels          respjson.Field
+		CountryCode       respjson.Field
+		DefaultChannel    respjson.Field
+		DisplayName       respjson.Field
+		PhoneNumber       respjson.Field
+		PrimaryEmail      respjson.Field
+		PrimaryPhone      respjson.Field
+		ProfileName       respjson.Field
+		UpdatedAt         respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
 	} `json:"-"`
 }
 
@@ -364,6 +348,10 @@ func init() {
 }
 
 type ContactUpdateParams struct {
+	// Human-readable name for this contact. Set to null to clear it and fall back to
+	// the contact's identifier. Contacts created automatically from an inbound message
+	// have no display name until you set one.
+	DisplayName param.Opt[string] `json:"displayName,omitzero"`
 	// Preferred channel for this contact. Set to null to clear.
 	//
 	// Any of "sms", "whatsapp", "telegram", "email", "instagram", "messenger",
@@ -395,9 +383,30 @@ const (
 )
 
 type ContactListParams struct {
-	Cursor      param.Opt[string] `query:"cursor,omitzero" json:"-"`
-	Limit       param.Opt[int64]  `query:"limit,omitzero" json:"-"`
+	// Opaque cursor from a previous response's `nextCursor`. Do not construct it.
+	Cursor param.Opt[string] `query:"cursor,omitzero" json:"-"`
+	Limit  param.Opt[int64]  `query:"limit,omitzero" json:"-"`
+	// Exact match on the contact's primary phone number, in E.164.
 	PhoneNumber param.Opt[string] `query:"phoneNumber,omitzero" json:"-"`
+	// Free-text match over the contact's name (`displayName` and the WhatsApp profile
+	// name), phone numbers and email addresses. Case- and accent-insensitive. A phone
+	// number matches on a trailing fragment too, so `5551234` finds `+14155551234`.
+	//
+	// Contacts created automatically from an inbound message have no `displayName` —
+	// they are matched by their identifier until you set one with
+	// `PATCH /v1/contacts/{contactId}`.
+	//
+	// Results come back in relevance order rather than newest-first. `cursor` is
+	// opaque in both modes; pass back exactly what the previous response returned, and
+	// start a new pagination run when the search term changes.
+	Search param.Opt[string] `query:"search,omitzero" json:"-"`
+	// Tag name. Repeatable: `?tag=vip&tag=chile` returns contacts carrying **every**
+	// tag given, not any of them — the same rule the dashboard filter applies.
+	//
+	// Tags are matched by name, case-insensitively. An unknown tag returns 400 rather
+	// than being ignored, because a typo that silently matched every contact would be
+	// a worse answer than an error.
+	Tag []string `query:"tag,omitzero" json:"-"`
 	paramObj
 }
 
