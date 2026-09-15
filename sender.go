@@ -170,10 +170,12 @@ type Sender struct {
 	Name string `json:"name" api:"required"`
 	// Phone number in E.164 format.
 	PhoneNumber string `json:"phoneNumber" api:"required"`
-	// Channels this sender can actually send on right now, computed from its
-	// configuration. Empty means the sender cannot send or receive anything yet: a
-	// phoneNumber alone does not enable SMS or voice. Check this rather than inferring
-	// capability from phoneNumber or emailAddress.
+	// Channels this sender can actually send on right now: configured AND activated.
+	// Empty means the sender cannot send or receive anything yet: a phoneNumber alone
+	// does not enable SMS or voice, and a connected account that is not activated is
+	// left out, because every send on it is refused. Check this rather than inferring
+	// capability from phoneNumber or emailAddress, and turn a connected channel on
+	// with `POST /v1/senders/{senderId}/channels/{channel}/activate`.
 	Channels  []string  `json:"channels"`
 	CreatedAt time.Time `json:"createdAt" format:"date-time"`
 	// From-address for the email channel, if configured.
@@ -383,13 +385,19 @@ const (
 //
 // **Partner events:**
 //
-//   - `invitation.status_changed`: A partner invitation status changed (pending,
-//     in_progress, completed, cancelled, failed). `data` carries `invitationId`,
-//     `clientName`, `clientEmail`, `connectionType` (`whatsapp_waba` or
-//     `messenger`), `previousStatus`, and `currentStatus`. On `completed` it also
-//     carries `senderId` and `connectedAccount` (`channel`, `id`, `name`) — the
-//     WhatsApp number or Facebook Page that was linked. On `failed` it carries
-//     `failureReason`; the invitation link stays usable, so a client can retry it.
+//   - `invitation.status_changed`: A partner invitation's stored status changed: to
+//     `in_progress`, `completed`, `failed`, `cancelled`, or back to `pending` when
+//     it is resent from the dashboard. A change to the same status sends nothing,
+//     and expiry is not a stored change, so no event is sent when an invitation
+//     expires. Delivered to the project webhook (`POST /v1/invitations/webhook`) of
+//     the project that created the invitation; a parent project does not receive its
+//     sub-accounts' events. `data` carries `invitationId`, `clientName`,
+//     `clientEmail`, `connectionType` (`whatsapp_waba` or `messenger`),
+//     `previousStatus`, and `currentStatus`. On `completed` it also carries
+//     `senderId`, `connectedAccount` (`channel`, `id`, `name`) — the WhatsApp number
+//     or Facebook Page that was linked — and, for WhatsApp, `wabaAccountId`. On
+//     `failed` it carries `failureReason`; the invitation link stays usable, so a
+//     client can retry it.
 //
 // **Voice Agent events:** For every voice event, `data` carries `callId`,
 // `direction`, `from`, `to`, `status`, `durationSeconds`, `endReason`, and
@@ -588,8 +596,10 @@ type SenderNewParams struct {
 	EmailDomainID param.Opt[string] `json:"emailDomainId,omitzero"`
 	// Display name shown in the recipient's inbox for the email channel.
 	EmailFromName param.Opt[string] `json:"emailFromName,omitzero"`
-	// Enable inbound email receiving on this sender. Requires a verified MX record on
-	// the domain; ignored otherwise.
+	// Enable inbound email receiving on this sender. Requires a verified inbound MX
+	// record on the domain; the request is ignored otherwise. Read
+	// `emailReceivingEnabled` back off the response to see whether it was applied — it
+	// comes back `false` when the MX has not verified.
 	EmailReceivingEnabled param.Opt[bool] `json:"emailReceivingEnabled,omitzero"`
 	// Enable the one-way SMS channel (`sms_oneway`). Needs nothing else — no phone
 	// number, no credential — so it is the fastest way to get a sender that can send.
@@ -603,8 +613,10 @@ type SenderNewParams struct {
 	// Phone number in E.164 format, and it must be a number your project already owns
 	// (see `GET /v1/phone-numbers`). The number is routed to the sender as part of
 	// this call, which is what turns the SMS channel on. Passing a number the project
-	// does not own, or one already attached to another sender, returns 400 rather than
-	// creating a sender that cannot send. Omit for an email-only sender.
+	// does not own, one already attached to another sender, or one rejected in
+	// regulatory review returns 400 rather than creating a sender that cannot send. A
+	// number still under review is attached and starts carrying messages when it is
+	// approved. Omit for an email-only sender.
 	PhoneNumber  param.Opt[string] `json:"phoneNumber,omitzero"`
 	SetAsDefault param.Opt[bool]   `json:"setAsDefault,omitzero"`
 	// HTTPS URL for webhook events.
@@ -672,7 +684,10 @@ type SenderUpdateParams struct {
 	EmailDomainID param.Opt[string] `json:"emailDomainId,omitzero"`
 	// Display name shown in the recipient's inbox for the email channel.
 	EmailFromName param.Opt[string] `json:"emailFromName,omitzero"`
-	// Enable or disable inbound email receiving for this sender.
+	// Enable or disable inbound email receiving for this sender. Enabling requires a
+	// verified inbound MX record on the domain; the request is ignored otherwise, and
+	// `emailReceivingEnabled` comes back `false` on the response. Disabling always
+	// applies.
 	EmailReceivingEnabled param.Opt[bool] `json:"emailReceivingEnabled,omitzero"`
 	// Turn the one-way SMS channel on or off. Enabling needs nothing else and takes
 	// effect immediately; disabling removes the channel from the sender. Confirm with
