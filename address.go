@@ -39,8 +39,9 @@ func NewAddressService(opts ...option.RequestOption) (r AddressService) {
 	return
 }
 
-// Create a regulatory address for phone number purchases. Some countries require a
-// verified address before phone numbers can be activated.
+// Create a regulatory address, to use as the value of an `address` requirement
+// when buying a phone number. It is registered for review when it is created, with
+// status `pending`.
 func (r *AddressService) New(ctx context.Context, body AddressNewParams, opts ...option.RequestOption) (res *AddressNewResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/addresses"
@@ -83,7 +84,9 @@ func (r *AddressService) ListAutoPaging(ctx context.Context, query AddressListPa
 	return pagination.NewCursorAutoPager(r.List(ctx, query, opts...))
 }
 
-// Delete a regulatory address. Cannot delete addresses that are in use.
+// Delete a regulatory address from this project. Any address can be deleted,
+// whatever its status. Phone numbers already purchased with it are not affected,
+// and neither is information already submitted for later purchases in its country.
 func (r *AddressService) Delete(ctx context.Context, addressID string, opts ...option.RequestOption) (err error) {
 	opts = slices.Concat(r.Options, opts)
 	opts = append([]option.RequestOption{option.WithHeader("Accept", "*/*")}, opts...)
@@ -181,15 +184,19 @@ func (r *AddressGetResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AddressNewParams struct {
-	CountryCode        string            `json:"countryCode" api:"required"`
+	CountryCode string `json:"countryCode" api:"required"`
+	// First name of the person the address is registered to.
+	FirstName string `json:"firstName" api:"required"`
+	// Last name of the person the address is registered to.
+	LastName           string            `json:"lastName" api:"required"`
 	Locality           string            `json:"locality" api:"required"`
 	PostalCode         string            `json:"postalCode" api:"required"`
 	StreetAddress      string            `json:"streetAddress" api:"required"`
 	AdministrativeArea param.Opt[string] `json:"administrativeArea,omitzero"`
-	BusinessName       param.Opt[string] `json:"businessName,omitzero"`
-	ExtendedAddress    param.Opt[string] `json:"extendedAddress,omitzero"`
-	FirstName          param.Opt[string] `json:"firstName,omitzero"`
-	LastName           param.Opt[string] `json:"lastName,omitzero"`
+	// Business name, when the address belongs to a business. Defaults to the person's
+	// full name.
+	BusinessName    param.Opt[string] `json:"businessName,omitzero"`
+	ExtendedAddress param.Opt[string] `json:"extendedAddress,omitzero"`
 	paramObj
 }
 

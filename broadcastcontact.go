@@ -143,7 +143,17 @@ type BroadcastContactListParams struct {
 	Limit  param.Opt[int64]  `query:"limit,omitzero" json:"-"`
 	// Status of a contact within a broadcast.
 	//
-	// Any of "pending", "queued", "sending", "delivered", "failed", "skipped".
+	//   - `pending`, `queued`, `sending`: not handed to the provider yet.
+	//   - `sent`: accepted by the provider; delivery is not confirmed yet. Channels that
+	//     never report delivery leave the recipient here.
+	//   - `delivered`: the channel confirmed delivery to the device. A WhatsApp read
+	//     receipt also counts as delivered.
+	//   - `failed`: not delivered. A recipient can move from `sent` or `delivered` to
+	//     `failed` when the provider reports a failure late.
+	//   - `skipped`: not sent, because the recipient opted out of the channel or the
+	//     broadcast was cancelled before reaching it.
+	//
+	// Any of "pending", "queued", "sending", "sent", "delivered", "failed", "skipped".
 	Status BroadcastContactStatus `query:"status,omitzero" json:"-"`
 	paramObj
 }

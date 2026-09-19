@@ -181,13 +181,16 @@ func (r *BroadcastService) RetryReview(ctx context.Context, broadcastID string, 
 // An account that has verified nothing is refused with `403` and code
 // `kyc_required` on every channel other than `whatsapp`. Any one of these lifts
 // it: identity verification (KYC), a saved payment method, a settled deposit, or a
-// paid plan. Business verification (KYB) is not required to broadcast; it gates
-// 10DLC registration only. A `whatsapp` broadcast is exempt: it can only be built
-// on a template, and Meta vets the business and the content when it approves that
-// template, so an unapproved template is refused instead. `smart` is not exempt,
-// since it can route a contact to SMS or email. Drafts can be created, edited and
-// kept without any check. Every send path (dashboard, API and CLI) enforces the
-// same rule.
+// paid plan. Business verification (KYB) is not required to broadcast on any
+// channel except `sms_oneway`, which is refused with `403` and code `KYB_REQUIRED`
+// until it is approved; KYB also gates 10DLC registration. A `smart` broadcast is
+// never refused for KYB: without it, one-way SMS is simply dropped from the
+// channels smart routing may pick for a contact. A `whatsapp` broadcast is exempt:
+// it can only be built on a template, and Meta vets the business and the content
+// when it approves that template, so an unapproved template is refused instead.
+// `smart` is not exempt, since it can route a contact to SMS or email. Drafts can
+// be created, edited and kept without any check. Every send path (dashboard, API
+// and CLI) enforces the same rule.
 //
 // **Daily ceilings apply per recipient.** Each message a broadcast sends counts
 // against the channel's daily ceiling (see `POST /v1/messages`). Once the ceiling
@@ -240,9 +243,10 @@ type Broadcast struct {
 	ActualCost  float64   `json:"actualCost" api:"nullable"`
 	CompletedAt time.Time `json:"completedAt" format:"date-time"`
 	// Content for non-text broadcast message types.
-	Content        BroadcastContent `json:"content"`
-	DeliveredCount int64            `json:"deliveredCount"`
-	EmailSubject   string           `json:"emailSubject"`
+	Content BroadcastContent `json:"content"`
+	// Recipients with confirmed delivery to the device.
+	DeliveredCount int64  `json:"deliveredCount"`
+	EmailSubject   string `json:"emailSubject"`
 	// Estimated total cost in USD.
 	EstimatedCost float64           `json:"estimatedCost" api:"nullable"`
 	FailedCount   int64             `json:"failedCount"`
@@ -257,9 +261,12 @@ type Broadcast struct {
 	ScheduledAt  time.Time             `json:"scheduledAt" format:"date-time"`
 	SenderID     string                `json:"senderId"`
 	SendingCount int64                 `json:"sendingCount"`
-	StartedAt    time.Time             `json:"startedAt" format:"date-time"`
-	Text         string                `json:"text"`
-	UpdatedAt    time.Time             `json:"updatedAt" format:"date-time"`
+	// Recipients whose message the provider accepted, without a confirmed delivery
+	// yet. Channels that never report delivery keep their recipients here.
+	SentCount int64     `json:"sentCount"`
+	StartedAt time.Time `json:"startedAt" format:"date-time"`
+	Text      string    `json:"text"`
+	UpdatedAt time.Time `json:"updatedAt" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID             respjson.Field
@@ -284,6 +291,7 @@ type Broadcast struct {
 		ScheduledAt    respjson.Field
 		SenderID       respjson.Field
 		SendingCount   respjson.Field
+		SentCount      respjson.Field
 		StartedAt      respjson.Field
 		Text           respjson.Field
 		UpdatedAt      respjson.Field
@@ -347,7 +355,17 @@ type BroadcastContact struct {
 	RecipientType BroadcastContactRecipientType `json:"recipientType" api:"required"`
 	// Status of a contact within a broadcast.
 	//
-	// Any of "pending", "queued", "sending", "delivered", "failed", "skipped".
+	//   - `pending`, `queued`, `sending`: not handed to the provider yet.
+	//   - `sent`: accepted by the provider; delivery is not confirmed yet. Channels that
+	//     never report delivery leave the recipient here.
+	//   - `delivered`: the channel confirmed delivery to the device. A WhatsApp read
+	//     receipt also counts as delivered.
+	//   - `failed`: not delivered. A recipient can move from `sent` or `delivered` to
+	//     `failed` when the provider reports a failure late.
+	//   - `skipped`: not sent, because the recipient opted out of the channel or the
+	//     broadcast was cancelled before reaching it.
+	//
+	// Any of "pending", "queued", "sending", "sent", "delivered", "failed", "skipped".
 	Status       BroadcastContactStatus `json:"status" api:"required"`
 	Cost         float64                `json:"cost" api:"nullable"`
 	ErrorCode    string                 `json:"errorCode"`
@@ -392,12 +410,23 @@ const (
 )
 
 // Status of a contact within a broadcast.
+//
+//   - `pending`, `queued`, `sending`: not handed to the provider yet.
+//   - `sent`: accepted by the provider; delivery is not confirmed yet. Channels that
+//     never report delivery leave the recipient here.
+//   - `delivered`: the channel confirmed delivery to the device. A WhatsApp read
+//     receipt also counts as delivered.
+//   - `failed`: not delivered. A recipient can move from `sent` or `delivered` to
+//     `failed` when the provider reports a failure late.
+//   - `skipped`: not sent, because the recipient opted out of the channel or the
+//     broadcast was cancelled before reaching it.
 type BroadcastContactStatus string
 
 const (
 	BroadcastContactStatusPending   BroadcastContactStatus = "pending"
 	BroadcastContactStatusQueued    BroadcastContactStatus = "queued"
 	BroadcastContactStatusSending   BroadcastContactStatus = "sending"
+	BroadcastContactStatusSent      BroadcastContactStatus = "sent"
 	BroadcastContactStatusDelivered BroadcastContactStatus = "delivered"
 	BroadcastContactStatusFailed    BroadcastContactStatus = "failed"
 	BroadcastContactStatusSkipped   BroadcastContactStatus = "skipped"
@@ -506,7 +535,7 @@ const (
 
 type BroadcastProgress struct {
 	BroadcastID string `json:"broadcastId" api:"required"`
-	// Successfully delivered.
+	// Confirmed delivered to the device.
 	Delivered int64 `json:"delivered" api:"required"`
 	// Failed to deliver.
 	Failed int64 `json:"failed" api:"required"`
@@ -532,8 +561,10 @@ type BroadcastProgress struct {
 	// Estimated total cost in USD.
 	EstimatedCost float64 `json:"estimatedCost" api:"nullable"`
 	// Amount reserved from balance in USD.
-	ReservedAmount float64   `json:"reservedAmount" api:"nullable"`
-	StartedAt      time.Time `json:"startedAt" format:"date-time"`
+	ReservedAmount float64 `json:"reservedAmount" api:"nullable"`
+	// Accepted by the provider, delivery not confirmed yet.
+	Sent      int64     `json:"sent"`
+	StartedAt time.Time `json:"startedAt" format:"date-time"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		BroadcastID           respjson.Field
@@ -549,6 +580,7 @@ type BroadcastProgress struct {
 		EstimatedCompletionAt respjson.Field
 		EstimatedCost         respjson.Field
 		ReservedAmount        respjson.Field
+		Sent                  respjson.Field
 		StartedAt             respjson.Field
 		ExtraFields           map[string]respjson.Field
 		raw                   string
