@@ -49,7 +49,7 @@ func TestSenderAgentFlowNewWithOptionalParams(t *testing.T) {
 			}},
 			Trigger: zavudev.FlowTriggerParam{
 				Type:     zavudev.FlowTriggerTypeKeyword,
-				Intent:   zavudev.String("intent"),
+				Intent:   zavudev.String("quiere saber precios o cotizar"),
 				Keywords: []string{"info", "pricing", "demo"},
 			},
 			Description: zavudev.String("Capture lead information"),
@@ -127,7 +127,7 @@ func TestSenderAgentFlowUpdateWithOptionalParams(t *testing.T) {
 			}},
 			Trigger: zavudev.FlowTriggerParam{
 				Type:     zavudev.FlowTriggerTypeKeyword,
-				Intent:   zavudev.String("intent"),
+				Intent:   zavudev.String("quiere saber precios o cotizar"),
 				Keywords: []string{"string"},
 			},
 		},
