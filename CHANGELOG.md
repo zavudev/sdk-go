@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.6.0 (2026-09-20)
+
+Full Changelog: [v0.5.0...v0.6.0](https://github.com/zavudev/sdk-go/compare/v0.5.0...v0.6.0)
+
+### Features
+
+* **api:** api update ([4faf07a](https://github.com/zavudev/sdk-go/commit/4faf07a94bce767d9bbe69c3db13f8e8f73cdff4))
+* **api:** api update ([919e1b1](https://github.com/zavudev/sdk-go/commit/919e1b16fcabc76e2dc82a277780541b50ed337d))
+* **api:** api update ([6ad43b8](https://github.com/zavudev/sdk-go/commit/6ad43b8cff4fce8ab910b5c0da592e7ee89e018d))
+* **api:** api update ([3fc97e6](https://github.com/zavudev/sdk-go/commit/3fc97e6d4975994f421407e1f0c02af5f6346f73))
+* **api:** api update ([88c0842](https://github.com/zavudev/sdk-go/commit/88c084275a839f06eff00c230a7a2deebc7958dc))
+* **api:** api update ([2599846](https://github.com/zavudev/sdk-go/commit/2599846341cfbae7aa59075b662f9b94965b968f))
+* **api:** api update ([1f12acb](https://github.com/zavudev/sdk-go/commit/1f12acbba8c1a5a3da177093cb609fa5698bfa83))
+* **api:** api update ([359aa52](https://github.com/zavudev/sdk-go/commit/359aa52fa06b69ffd06523194cfc5e2f120b21ca))
+* **api:** api update ([5f809fc](https://github.com/zavudev/sdk-go/commit/5f809fcafdf37073cc601db59d3d825df1729c6a))
+* **api:** api update ([bca7838](https://github.com/zavudev/sdk-go/commit/bca783856dab320272d8e2b8912d7d28dfcac655))
+* **api:** api update ([62c9471](https://github.com/zavudev/sdk-go/commit/62c9471e884567ea825caa527ab88da7b04d2cb0))
+
 ## 0.5.0 (2026-09-08)
 
 Full Changelog: [v0.4.0...v0.5.0](https://github.com/zavudev/sdk-go/compare/v0.4.0...v0.5.0)
