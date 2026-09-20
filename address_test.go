@@ -28,14 +28,14 @@ func TestAddressNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Addresses.New(context.TODO(), zavudev.AddressNewParams{
 		CountryCode:        "DE",
+		FirstName:          "John",
+		LastName:           "Doe",
 		Locality:           "Berlin",
 		PostalCode:         "10115",
 		StreetAddress:      "123 Main St",
 		AdministrativeArea: zavudev.String("administrativeArea"),
 		BusinessName:       zavudev.String("businessName"),
 		ExtendedAddress:    zavudev.String("extendedAddress"),
-		FirstName:          zavudev.String("John"),
-		LastName:           zavudev.String("Doe"),
 	})
 	if err != nil {
 		var apierr *zavudev.Error

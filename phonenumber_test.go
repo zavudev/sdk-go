@@ -109,6 +109,11 @@ func TestPhoneNumberPurchaseWithOptionalParams(t *testing.T) {
 	_, err := client.PhoneNumbers.Purchase(context.TODO(), zavudev.PhoneNumberPurchaseParams{
 		PhoneNumber: "+15551234567",
 		Name:        zavudev.String("Primary Line"),
+		RegulatoryRequirements: []zavudev.PhoneNumberPurchaseParamsRegulatoryRequirement{{
+			FieldValue:      "jd7x2k3m4n5p6q7r8s9t0abc",
+			RequirementType: "8c5b1a2e-0f3d-4f5b-9a61-2c7e4d9b1f10",
+		}},
+		Type: zavudev.PhoneNumberTypeLocal,
 	})
 	if err != nil {
 		var apierr *zavudev.Error
@@ -156,7 +161,8 @@ func TestPhoneNumberRequirementsWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.PhoneNumbers.Requirements(context.TODO(), zavudev.PhoneNumberRequirementsParams{
-		CountryCode: "xx",
+		CountryCode: zavudev.String("xx"),
+		PhoneNumber: zavudev.String("phoneNumber"),
 		Type:        zavudev.PhoneNumberTypeLocal,
 	})
 	if err != nil {
